@@ -9,9 +9,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./muheto_app
 
     steps:
       - name: Checkout repository
@@ -27,10 +24,11 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          cache: true
 
       - name: Install dependencies
         run: flutter pub get
+        working-directory: ./muheto_app
 
       - name: Build APK
-        run: flutter build apk --debugs
+        run: flutter build apk --debug
+        working-directory: ./muheto_app
