@@ -9,6 +9,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./muheto_app
 
     steps:
       - name: Checkout repository
@@ -27,9 +30,7 @@ jobs:
           cache: true
 
       - name: Install dependencies
-        working-directory: ./muheto_app
         run: flutter pub get
 
       - name: Build APK
-        working-directory: ./muheto_app
-        run: flutter build apk --debug
+        run: flutter build apk --debugs
