@@ -26,6 +26,8 @@ Future<void> main() async {
   timeago.setLocaleMessages('fr', timeago.FrMessages());
   timeago.setLocaleMessages('fr_short', timeago.FrShortMessages());
   await initializeDateFormatting('fr_FR');
+  await initializeDateFormatting('en_US');
+  await initializeDateFormatting('sw_TZ');
 
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 

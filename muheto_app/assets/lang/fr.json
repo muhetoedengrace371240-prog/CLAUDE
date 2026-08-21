@@ -74,5 +74,8 @@
   "lang.sw": "Kiswahili",
   "settings.title": "Paramètres",
   "settings.logoutConfirmTitle": "Se déconnecter ?",
-  "settings.logoutConfirmMessage": "Tu devras te reconnecter pour accéder à ton compte."
+  "settings.logoutConfirmMessage": "Tu devras te reconnecter pour accéder à ton compte.",
+  "settings.deleteAccount": "Supprimer mon compte",
+  "settings.deleteAccountConfirmTitle": "Supprimer ton compte ?",
+  "settings.deleteAccountConfirmMessage": "Cette action est irréversible. Ton profil sera supprimé, mais tes vidéos et messages existants pourraient rester visibles ailleurs."
 }

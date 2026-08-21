@@ -74,5 +74,8 @@
   "lang.sw": "Kiswahili",
   "settings.title": "Mipangilio",
   "settings.logoutConfirmTitle": "Toka?",
-  "settings.logoutConfirmMessage": "Utahitaji kuingia tena ili kufikia akaunti yako."
+  "settings.logoutConfirmMessage": "Utahitaji kuingia tena ili kufikia akaunti yako.",
+  "settings.deleteAccount": "Futa akaunti yangu",
+  "settings.deleteAccountConfirmTitle": "Futa akaunti yako?",
+  "settings.deleteAccountConfirmMessage": "Hatua hii haiwezi kutenduliwa. Wasifu wako utafutwa, lakini video na ujumbe wako uliopo unaweza kubaki unaonekana mahali pengine."
 }

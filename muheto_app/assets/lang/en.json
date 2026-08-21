@@ -74,5 +74,8 @@
   "lang.sw": "Kiswahili",
   "settings.title": "Settings",
   "settings.logoutConfirmTitle": "Log out?",
-  "settings.logoutConfirmMessage": "You'll need to sign in again to access your account."
+  "settings.logoutConfirmMessage": "You'll need to sign in again to access your account.",
+  "settings.deleteAccount": "Delete my account",
+  "settings.deleteAccountConfirmTitle": "Delete your account?",
+  "settings.deleteAccountConfirmMessage": "This action is irreversible. Your profile will be deleted, but your existing videos and messages may remain visible elsewhere."
 }

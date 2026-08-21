@@ -58,6 +58,63 @@ class SettingsScreen extends StatelessWidget {
     }
   }
 
+  Future<void> _confirmDeleteAccount(BuildContext context, AppLocalizations loc) async {
+    final passwordController = TextEditingController();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: Text(loc.t('settings.deleteAccountConfirmTitle'), style: const TextStyle(color: Colors.white)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(loc.t('settings.deleteAccountConfirmMessage'), style: const TextStyle(color: Colors.white70)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: passwordController,
+              obscureText: true,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: loc.t('auth.password'),
+                hintStyle: const TextStyle(color: Colors.white38),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(loc.t('common.cancel'), style: const TextStyle(color: Colors.white70)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(
+              loc.t('settings.deleteAccount'),
+              style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      try {
+        await AuthService().deleteAccount(password: passwordController.text);
+        if (!context.mounted) return;
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+          (route) => false,
+        );
+      } catch (e) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AuthService().friendlyErrorMessage(e))),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
@@ -82,6 +139,12 @@ class SettingsScreen extends StatelessWidget {
             title: loc.t('profile.logout'),
             titleColor: AppColors.error,
             onTap: () => _confirmLogout(context, loc),
+          ),
+          _SettingsTile(
+            icon: Icons.delete_forever_rounded,
+            title: loc.t('settings.deleteAccount'),
+            titleColor: AppColors.error,
+            onTap: () => _confirmDeleteAccount(context, loc),
           ),
         ],
       ),

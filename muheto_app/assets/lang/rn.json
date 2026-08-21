@@ -74,5 +74,8 @@
   "lang.sw": "Igiswahiri",
   "settings.title": "Igenamiterere",
   "settings.logoutConfirmTitle": "Gusohoka?",
-  "settings.logoutConfirmMessage": "Uzosubira kwinjira kugira ubone konte yawe."
+  "settings.logoutConfirmMessage": "Uzosubira kwinjira kugira ubone konte yawe.",
+  "settings.deleteAccount": "Siba konte yanje",
+  "settings.deleteAccountConfirmTitle": "Siba konte yawe?",
+  "settings.deleteAccountConfirmMessage": "Iki gikorwa ntigisubirwamwo. Umwirondoro wawe uzosibwa, ariko amashusho n'ubutumwa vyawe bishobora kuguma bigaragara ahandi."
 }
