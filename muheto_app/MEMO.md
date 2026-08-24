@@ -8,7 +8,12 @@
 > Après chaque session qui ajoute un champ, une fonction ou une collection,
 > **mettre à jour ce fichier** avant de fermer la conversation.
 
-Dernière mise à jour : 21/08/2026
+Dernière mise à jour : 24/08/2026
+
+> **Statut de complétude** : modèles Dart (User, Business, Chat, Message, Video, Comment) ET
+> tous les services (`auth`, `business`, `chat`, `feed`, `gold`, `notification`, `profile`, `search`)
+> sont maintenant documentés en détail. Ce fichier reflète fidèlement le code tel qu'il existait
+> au 24/08/2026 — toute évolution du code doit être répercutée ici.
 
 ---
 
@@ -78,16 +83,170 @@ Champs réels de la classe `UserModel` (respecter ces noms EXACTEMENT, en camelC
 
 ---
 
-## 4. Authentification (`lib/services/auth_service.dart`)
+## 3bis. Modèle Business (`lib/models/business_model.dart`)
 
-Classe `AuthService`, méthodes disponibles :
+Collection Firestore : **`businesses/{businessId}`**
+
+| Champ Dart | Type | Notes |
+|---|---|---|
+| `id` | `String` | = `doc.id` |
+| `ownerId` | `String` | référence `users/{uid}` du compte Business propriétaire |
+| `name` | `String` | |
+| `category` | `String` | valeurs possibles : voir constante `kBusinessCategories` (Restaurant, Boutique, Beauté & Bien-être, Santé, Éducation, Technologie, Hôtellerie, Artisanat, Services, Autre) |
+| `description` | `String` | |
+| `logoUrl`, `bannerUrl` | `String` | Firebase Storage |
+| `address`, `city` | `String` | `city` par défaut `"Bujumbura"` |
+| `phoneNumber` | `String` | format international recommandé, ex. `"+25779123456"` |
+| `whatsappNumber` | `String` | optionnel |
+| `websiteUrl`, `instagramUrl`, `facebookUrl` | `String` | optionnels |
+| `openingHours` | `Map<String, String>` | clé = jour en français (voir `kWeekDaysFr`), valeur = `"08:00-18:00"` ou `"Fermé"` |
+| `isVerified` | `bool` | badge doré vérifié |
+| `isSponsored` | `bool` | mis en avant en tête de liste (offre payante) |
+| `createdAt` | `DateTime?` | |
+| `viewsCount`, `callClicksCount`, `websiteClicksCount`, `whatsappClicksCount` | `int` | compteurs analytics (Brique 13), incrémentés par `BusinessService` |
+
+**Champ auto-généré à l'écriture (pas dans la classe Dart)** : `nameLower` = `name.toLowerCase()`, écrit dans `toFirestore()` pour permettre la recherche par préfixe (Firestore compare les chaînes par ordre d'octets, donc la recherche a besoin d'une version normalisée).
+
+**Getter calculé** : `isOpenNow` (bool?) — se base sur `openingHours[jour courant]`, retourne `null` si l'horaire du jour est absent ou mal formaté (l'UI n'affiche alors pas de badge).
+
+---
+
+## 3ter. Modèle Chat (`lib/models/chat_model.dart`)
+
+Collection Firestore : **`chats/{chatId}`**
+
+Vu du point de vue de l'utilisateur connecté — les champs `other*` désignent toujours l'interlocuteur.
+
+| Champ Dart | Type | Notes |
+|---|---|---|
+| `id` | `String` | |
+| `participants` | `List<String>` | les 2 uid |
+| `otherUserId`, `otherUsername`, `otherAvatarUrl`, `otherIsGoldMember` | — | dérivés de `participantsInfo[otherUid]` (dénormalisé côté Firestore) |
+| `lastMessage`, `lastMessageSenderId`, `lastMessageAt` | — | |
+| `unreadCount` | `int` | dérivé de `unreadCounts[currentUid]` |
+
+**Structure Firestore réelle** (pas 1:1 avec la classe Dart, car dénormalisée) :
+```
+chats/{chatId}
+  participants: array<string>
+  participantsInfo: map<uid, {username, avatarUrl, isGoldMember}>
+  lastMessage, lastMessageSenderId, lastMessageAt
+  unreadCounts: map<uid, number>
+  createdAt: Timestamp
+```
+
+### Sous-collection Messages (`lib/models/message_model.dart`)
+**`chats/{chatId}/messages/{messageId}`**
+
+| Champ Dart | Type |
+|---|---|
+| `id`, `senderId`, `text`, `createdAt` | `String` / `DateTime?` |
+
+---
+
+## 3quater. Modèle Video (`lib/models/video_model.dart`)
+
+Collection Firestore : **`videos/{videoId}`**
+
+| Champ Dart | Type | Notes |
+|---|---|---|
+| `id`, `userId`, `username`, `userAvatarUrl`, `isVerified` | — | dénormalisé depuis l'auteur |
+| `videoUrl`, `thumbnailUrl` | `String` | |
+| `caption` | `String` | |
+| `hashtags` | `List<String>` | |
+| `musicName` | `String` | défaut `"Son original - Muheto"` |
+| `category` | `String` | ex. `"humour"`, `"musique"`, `"business"` |
+| `scope` | `ContentScope` (enum) | **`burundi` \| `afrique` \| `monde`** — choisi à l'onboarding ("Choisis ton univers"). ⚠️ Ce `scope` est celui de la vidéo, PAS un champ de `UserModel` (qui n'a pas encore ce champ, voir section 3) |
+| `language` | `String` | `"rn" \| "fr" \| "en" \| "sw"` |
+| `likesCount`, `commentsCount`, `sharesCount`, `viewsCount` | `int` | |
+| `createdAt` | `DateTime?` | |
+| `isBusinessPost` | `bool` | |
+| `searchKeywords` | `List<String>` | dénormalisé (légende + hashtags en minuscules) pour la recherche plein-texte (Brique 12), voir `buildSearchKeywords` |
+
+Méthode utilitaire : `copyWith({likesCount, commentsCount, sharesCount})` pour mises à jour optimistes côté UI.
+
+### Sous-collection Comments (`lib/models/comment_model.dart`)
+**`videos/{videoId}/comments/{commentId}`**
+
+| Champ Dart | Type | Notes |
+|---|---|---|
+| `id`, `userId`, `username`, `avatarUrl`, `text` | — | |
+| `isGoldMember` | `bool` | dénormalisé au moment du commentaire (évite une lecture supplémentaire par commentaire pour afficher le badge VIP) |
+| `likesCount` | `int` | |
+| `createdAt` | `DateTime?` | |
+
+---
+
+## 4. Services (`lib/services/`)
+
+### 4.1 `AuthService` (`auth_service.dart`)
 - `signIn({email, password})`
-- `signUp({username, email, password})` → vérifie d'abord l'unicité du username (lecture Firestore, doit rester accessible sans authentification — voir règles ci-dessous), crée le compte Firebase Auth, écrit le document `users/{uid}`
+- `signUp({username, email, password})` → vérifie d'abord l'unicité du username (lecture Firestore, doit rester accessible sans authentification), crée le compte Firebase Auth, écrit le document `users/{uid}`
 - `signOut()`
-- `deleteAccount({password})` → ré-authentifie puis supprime le document Firestore ET le compte Auth. ⚠️ Ne supprime PAS en cascade les vidéos/chats/fiche Business (pas de conformité RGPD complète pour l'instant)
+- `deleteAccount({password})` → ré-authentifie puis supprime le document Firestore ET le compte Auth. ⚠️ Ne supprime PAS en cascade les vidéos/chats/fiche Business (pas de conformité RGPD complète)
 - `sendPasswordResetEmail(email)`
 - `friendlyErrorMessage(error)` → messages d'erreur en français pour l'UI
 - `currentUser` (getter), `authStateChanges` (Stream)
+
+### 4.2 `BusinessService` (`business_service.dart`) — collection `businesses`
+- Id de document **généré à l'avance** via `newBusinessId()` (PAS l'uid du propriétaire) — permet d'uploader logo/bannière vers Storage avant que le document existe.
+- Règle "une seule fiche Business par utilisateur" appliquée **côté applicatif uniquement** (via `getMyBusiness(uid)`), pas dans les règles Firestore.
+- `watchBusinesses({category})` — tri : sponsorisés d'abord (`isSponsored desc`), puis `createdAt desc`.
+- `searchBusinesses(query)` — recherche par préfixe sur `nameLower` (champ dénormalisé, auto-généré par `_withNameLower()` à chaque create/update).
+- `createBusinessWithId(id, business)`, `updateBusiness(id, data)`, `isOwner(id, uid)`.
+- Analytics (Brique 13) : `registerBusinessView`, `registerCallClick`, `registerWebsiteClick`, `registerWhatsappClick` — tous via `FieldValue.increment(1)` isolé, jamais via `updateBusiness()` (évite d'écraser un compteur avec une valeur périmée).
+- **Index composite Firestore requis** : `businesses: category ASC, isSponsored DESC, createdAt DESC`
+
+### 4.3 `ChatService` (`chat_service.dart`) — collection `chats`
+- **Id de chat déterministe** : les 2 uid triés alphabétiquement, joints par `_` (`uid1_uid2`) → garantit une seule conversation possible entre deux personnes, jamais de doublon.
+- `getOrCreateChat(otherUid)` — crée le document avec `participantsInfo` dénormalisé (username/avatar/isGoldMember des deux) si le chat n'existe pas encore.
+- `watchUserChats()` — triées par `lastMessageAt desc`.
+- `watchMessages(chatId)` — sous-collection `chats/{chatId}/messages`.
+- `sendMessage({chatId, text})` — via `runTransaction` : écrit le message, met à jour `lastMessage`/`lastMessageAt`, incrémente `unreadCounts.{otherUid}`, remet `unreadCounts.{uid}` à 0.
+- `markChatAsRead(chatId)` — à appeler à l'ouverture de l'écran de conversation.
+
+### 4.4 `FeedService` (`feed_service.dart`) — collection `videos`
+- `watchFeed({scope, pageSize})` + `fetchMoreVideos({after, scope, pageSize})` pour la pagination infinie.
+- `toggleLike(videoId)` — sous-collection `videos/{id}/likes/{uid}` (trace anti-doublon) + `likesCount` incrémenté/décrémenté via `runTransaction`.
+- `watchIsLiked(videoId)`, `registerView(videoId)`, `registerShare(videoId)`.
+- `watchComments(videoId)` / `addComment(videoId, comment)` — sous-collection `videos/{id}/comments`, `runTransaction` pour incrémenter `commentsCount`.
+- `getVideoOnce(videoId)` — lecture ponctuelle, utilisée par les deep-links de notification.
+- **Index composite Firestore requis** : `videos: scope ASC, createdAt DESC`
+
+### 4.5 `GoldService` (`gold_service.dart`) — statut Gold sur `users/{uid}`
+> ⚠️⚠️ **FAILLE DE SÉCURITÉ CONNUE, NON CORRIGÉE** : `startFreeTrial()` et `activateSubscription()`
+> écrivent DIRECTEMENT `isGoldMember`/`goldExpirationDate` dans Firestore, **sans aucune vérification
+> de paiement réelle**. N'importe quel utilisateur peut actuellement s'auto-attribuer le statut Gold.
+> **Ne jamais considérer ces méthodes comme sûres pour la production** tant qu'elles n'ont pas été
+> remplacées par un appel à une Cloud Function qui valide un webhook de paiement avant d'écrire.
+- `watchGoldStatus(uid)`, `startFreeTrial(uid)` (7 jours), `activateSubscription(uid, {duration=30 jours})` (prolonge depuis la date d'expiration actuelle si encore active, sinon depuis aujourd'hui), `cancelSubscription(uid)`.
+
+### 4.6 `NotificationService` (`notification_service.dart`)
+- Champ `fcmToken` stocké/supprimé sur `users/{uid}` via `registerDeviceToken()` / `clearDeviceToken(uid)`.
+- `firebaseMessagingBackgroundHandler` : **fonction top-level obligatoire** (pas une méthode de classe), annotée `@pragma('vm:entry-point')` pour survivre au tree-shaking en release. Tourne dans un isolate séparé — si besoin de Firebase dedans, il faut le ré-initialiser (le isolate principal ne partage pas son état).
+- 3 cas de réception gérés séparément : `listenForegroundMessages()` (bannière dorée custom), `listenNotificationTapWhileBackgrounded()` (`onMessageOpenedApp`), `handleInitialMessageIfAny()` (cold start, `getInitialMessage()`).
+- `enum MuhetoNotificationType { chat, comment, follow, unknown }` — la valeur du champ `type` dans le payload `data` doit correspondre exactement à ce qu'envoient les Cloud Functions (`functions/index.js`).
+- Navigation faite via `appNavigatorKey` global (pas besoin de `BuildContext` local).
+
+### 4.7 `ProfileService` (`profile_service.dart`)
+- Sous-collections : `users/{uid}/followers/{followerUid}` et `users/{uid}/following/{targetUid}` (chacune `{ createdAt }`).
+- `toggleFollow(targetUid)` — via `runTransaction`, met à jour les 2 sous-collections + `followersCount`/`followingCount` de façon atomique.
+- `watchUser(uid)` (stream), `getUserOnce(uid)` (lecture ponctuelle, pour dénormaliser sans listener permanent).
+- `watchUserVideos(uid)` — alimente la grille 3 colonnes du profil.
+- `isUsernameTaken(username, {excludingUid})` — utilisé à l'édition de profil.
+- `updateProfile({uid, username?, displayName?, bio?, avatarUrl?})`.
+- **Index composite Firestore requis** : `videos: userId ASC, createdAt DESC`
+
+### 4.8 `SearchService` (`search_service.dart`) — Brique 12
+- Recherche par **préfixe / mots-clés**, PAS de vraie recherche plein-texte (limitation Firestore native). Pas de tolérance aux fautes de frappe.
+- `searchUsers(query)` — préfixe sur `username` (déjà normalisé en minuscules depuis la Brique 5).
+- `searchVideos(query)` :
+  - si la requête commence par `#` → `arrayContains` exact sur `hashtags`
+  - sinon → `arrayContainsAny` sur `searchKeywords` (champ dénormalisé légende+hashtags, calculé à la publication par `UploadService`)
+  - ⚠️ **Backfill manquant** : les vidéos publiées AVANT la Brique 12 n'ont pas de `searchKeywords` et ne remontent pas dans la recherche tant qu'un script rétroactif ne le leur ajoute pas.
+  - Tri par date fait **côté client** (pas de `orderBy` combiné à `arrayContains*` sans index composite dédié).
+- La recherche de commerces reste dans `BusinessService.searchBusinesses` (pas dans ce service).
+- Piste d'évolution documentée dans le code : Algolia/Typesense pour une vraie recherche plein-texte à plus grande échelle.
 
 ---
 
@@ -111,7 +270,13 @@ service cloud.firestore {
 - Lecture de `users/*` : **ouverte à tous**, y compris non connectés (nécessaire pour la vérification d'unicité du pseudonyme à l'inscription)
 - Écriture de `users/{userId}` : uniquement le propriétaire, connecté
 - Suppression directe : jamais autorisée par les règles (passe par `deleteAccount()` côté app)
-- **Toute autre collection future (posts, chats, business...) est bloquée par défaut** tant que des règles dédiées ne sont pas ajoutées ici.
+- **⚠️ INCOHÉRENCE CONNUE À VÉRIFIER** : les services `BusinessService`, `ChatService`, `FeedService` et
+  leurs sous-collections (`likes`, `comments`, `followers`, `following`, `messages`) lisent/écrivent déjà
+  dans `businesses`, `videos`, `chats`, `users/{uid}/followers`, etc. — mais la règle générique
+  `match /{document=**} { allow read, write: if false; }` bloque tout ce qui n'est pas explicitement
+  `users/{userId}`. **Il faut ajouter des règles dédiées pour chacune de ces collections avant que ces
+  fonctionnalités marchent réellement en dehors du compte propriétaire des règles Firestore actuelles**
+  (vérifier en priorité si ce n'est pas déjà fait dans une session ultérieure à celle-ci).
 
 ---
 
