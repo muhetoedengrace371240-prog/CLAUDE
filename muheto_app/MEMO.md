@@ -8,12 +8,7 @@
 > Après chaque session qui ajoute un champ, une fonction ou une collection,
 > **mettre à jour ce fichier** avant de fermer la conversation.
 
-Dernière mise à jour : 24/08/2026
-
-> **Statut de complétude** : modèles Dart (User, Business, Chat, Message, Video, Comment) documentés en détail.
-> Services (`business_service`, `chat_service`, `feed_service`, `gold_service`, `notification_service`,
-> `profile_service`, `search_service`) — **pas encore documentés en détail**, à faire dans une prochaine session.
-> Ne pas supposer leurs signatures de fonctions tant que cette note n'a pas disparu.
+Dernière mise à jour : 21/08/2026
 
 ---
 
@@ -80,100 +75,6 @@ Champs réels de la classe `UserModel` (respecter ces noms EXACTEMENT, en camelC
 → **Toujours utiliser `isGoldActive` dans l'UI**, jamais `isGoldMember` seul (peut rester `true` après expiration si aucun job ne l'a remis à `false`).
 
 **Champ mentionné en commentaire mais PAS ENCORE implémenté** : `scope` (`"burundi" | "afrique" | "monde"`) — n'existe pas dans la classe Dart actuelle. Si une brique future en a besoin, il faut l'ajouter au modèle ET aux règles Firestore, pas juste au commentaire.
-
----
-
-## 3bis. Modèle Business (`lib/models/business_model.dart`)
-
-Collection Firestore : **`businesses/{businessId}`**
-
-| Champ Dart | Type | Notes |
-|---|---|---|
-| `id` | `String` | = `doc.id` |
-| `ownerId` | `String` | référence `users/{uid}` du compte Business propriétaire |
-| `name` | `String` | |
-| `category` | `String` | valeurs possibles : voir constante `kBusinessCategories` (Restaurant, Boutique, Beauté & Bien-être, Santé, Éducation, Technologie, Hôtellerie, Artisanat, Services, Autre) |
-| `description` | `String` | |
-| `logoUrl`, `bannerUrl` | `String` | Firebase Storage |
-| `address`, `city` | `String` | `city` par défaut `"Bujumbura"` |
-| `phoneNumber` | `String` | format international recommandé, ex. `"+25779123456"` |
-| `whatsappNumber` | `String` | optionnel |
-| `websiteUrl`, `instagramUrl`, `facebookUrl` | `String` | optionnels |
-| `openingHours` | `Map<String, String>` | clé = jour en français (voir `kWeekDaysFr`), valeur = `"08:00-18:00"` ou `"Fermé"` |
-| `isVerified` | `bool` | badge doré vérifié |
-| `isSponsored` | `bool` | mis en avant en tête de liste (offre payante) |
-| `createdAt` | `DateTime?` | |
-| `viewsCount`, `callClicksCount`, `websiteClicksCount`, `whatsappClicksCount` | `int` | compteurs analytics (Brique 13), incrémentés par `BusinessService` |
-
-**Champ auto-généré à l'écriture (pas dans la classe Dart)** : `nameLower` = `name.toLowerCase()`, écrit dans `toFirestore()` pour permettre la recherche par préfixe (Firestore compare les chaînes par ordre d'octets, donc la recherche a besoin d'une version normalisée).
-
-**Getter calculé** : `isOpenNow` (bool?) — se base sur `openingHours[jour courant]`, retourne `null` si l'horaire du jour est absent ou mal formaté (l'UI n'affiche alors pas de badge).
-
----
-
-## 3ter. Modèle Chat (`lib/models/chat_model.dart`)
-
-Collection Firestore : **`chats/{chatId}`**
-
-Vu du point de vue de l'utilisateur connecté — les champs `other*` désignent toujours l'interlocuteur.
-
-| Champ Dart | Type | Notes |
-|---|---|---|
-| `id` | `String` | |
-| `participants` | `List<String>` | les 2 uid |
-| `otherUserId`, `otherUsername`, `otherAvatarUrl`, `otherIsGoldMember` | — | dérivés de `participantsInfo[otherUid]` (dénormalisé côté Firestore) |
-| `lastMessage`, `lastMessageSenderId`, `lastMessageAt` | — | |
-| `unreadCount` | `int` | dérivé de `unreadCounts[currentUid]` |
-
-**Structure Firestore réelle** (pas 1:1 avec la classe Dart, car dénormalisée) :
-```
-chats/{chatId}
-  participants: array<string>
-  participantsInfo: map<uid, {username, avatarUrl, isGoldMember}>
-  lastMessage, lastMessageSenderId, lastMessageAt
-  unreadCounts: map<uid, number>
-  createdAt: Timestamp
-```
-
-### Sous-collection Messages (`lib/models/message_model.dart`)
-**`chats/{chatId}/messages/{messageId}`**
-
-| Champ Dart | Type |
-|---|---|
-| `id`, `senderId`, `text`, `createdAt` | `String` / `DateTime?` |
-
----
-
-## 3quater. Modèle Video (`lib/models/video_model.dart`)
-
-Collection Firestore : **`videos/{videoId}`**
-
-| Champ Dart | Type | Notes |
-|---|---|---|
-| `id`, `userId`, `username`, `userAvatarUrl`, `isVerified` | — | dénormalisé depuis l'auteur |
-| `videoUrl`, `thumbnailUrl` | `String` | |
-| `caption` | `String` | |
-| `hashtags` | `List<String>` | |
-| `musicName` | `String` | défaut `"Son original - Muheto"` |
-| `category` | `String` | ex. `"humour"`, `"musique"`, `"business"` |
-| `scope` | `ContentScope` (enum) | **`burundi` \| `afrique` \| `monde`** — choisi à l'onboarding ("Choisis ton univers"). ⚠️ Ce `scope` est celui de la vidéo, PAS un champ de `UserModel` (qui n'a pas encore ce champ, voir section 3) |
-| `language` | `String` | `"rn" \| "fr" \| "en" \| "sw"` |
-| `likesCount`, `commentsCount`, `sharesCount`, `viewsCount` | `int` | |
-| `createdAt` | `DateTime?` | |
-| `isBusinessPost` | `bool` | |
-| `searchKeywords` | `List<String>` | dénormalisé (légende + hashtags en minuscules) pour la recherche plein-texte (Brique 12), voir `buildSearchKeywords` |
-
-Méthode utilitaire : `copyWith({likesCount, commentsCount, sharesCount})` pour mises à jour optimistes côté UI.
-
-### Sous-collection Comments (`lib/models/comment_model.dart`)
-**`videos/{videoId}/comments/{commentId}`**
-
-| Champ Dart | Type | Notes |
-|---|---|---|
-| `id`, `userId`, `username`, `avatarUrl`, `text` | — | |
-| `isGoldMember` | `bool` | dénormalisé au moment du commentaire (évite une lecture supplémentaire par commentaire pour afficher le badge VIP) |
-| `likesCount` | `int` | |
-| `createdAt` | `DateTime?` | |
 
 ---
 
