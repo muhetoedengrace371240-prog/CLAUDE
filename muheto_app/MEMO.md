@@ -250,7 +250,7 @@ Méthode utilitaire : `copyWith({likesCount, commentsCount, sharesCount})` pour 
 
 ---
 
-## 5. Règles de sécurité Firestore (état actuel, publié)
+## 5. Règles de sécurité Firestore (état actuel, publié le 24/08/2026)
 
 ```
 rules_version = '2';
@@ -260,6 +260,42 @@ service cloud.firestore {
       allow read: if true;
       allow create, update: if request.auth != null && request.auth.uid == userId;
       allow delete: if false;
+      match /followers/{followerId} {
+        allow read: if true;
+        allow write: if request.auth != null;
+      }
+      match /following/{targetId} {
+        allow read: if true;
+        allow write: if request.auth != null;
+      }
+    }
+    match /businesses/{businessId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
+    }
+    match /videos/{videoId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      match /likes/{likeUserId} {
+        allow read: if true;
+        allow create, delete: if request.auth != null && request.auth.uid == likeUserId;
+      }
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+        allow update, delete: if false;
+      }
+    }
+    match /chats/{chatId} {
+      allow read, write: if request.auth != null && request.auth.uid in resource.data.participants;
+      allow create: if request.auth != null && request.auth.uid in request.resource.data.participants;
+      match /messages/{messageId} {
+        allow read, write: if request.auth != null &&
+          request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+      }
     }
     match /{document=**} {
       allow read, write: if false;
@@ -267,16 +303,13 @@ service cloud.firestore {
   }
 }
 ```
-- Lecture de `users/*` : **ouverte à tous**, y compris non connectés (nécessaire pour la vérification d'unicité du pseudonyme à l'inscription)
-- Écriture de `users/{userId}` : uniquement le propriétaire, connecté
-- Suppression directe : jamais autorisée par les règles (passe par `deleteAccount()` côté app)
-- **⚠️ INCOHÉRENCE CONNUE À VÉRIFIER** : les services `BusinessService`, `ChatService`, `FeedService` et
-  leurs sous-collections (`likes`, `comments`, `followers`, `following`, `messages`) lisent/écrivent déjà
-  dans `businesses`, `videos`, `chats`, `users/{uid}/followers`, etc. — mais la règle générique
-  `match /{document=**} { allow read, write: if false; }` bloque tout ce qui n'est pas explicitement
-  `users/{userId}`. **Il faut ajouter des règles dédiées pour chacune de ces collections avant que ces
-  fonctionnalités marchent réellement en dehors du compte propriétaire des règles Firestore actuelles**
-  (vérifier en priorité si ce n'est pas déjà fait dans une session ultérieure à celle-ci).
+- `users`, `businesses`, `videos` : lecture ouverte à tous ; écriture réservée au propriétaire (`uid`/`ownerId`/`userId` selon la collection)
+- `videos/{id}/likes/{uid}` : un utilisateur ne peut créer/supprimer que **son propre** like (id du doc = son uid)
+- `videos/{id}/comments` : lecture ouverte, création réservée à un utilisateur connecté déclarant son propre `userId`, aucune modification/suppression possible via les règles
+- `chats` et `chats/{id}/messages` : réservés strictement aux `participants` du chat (vérifié via `resource.data.participants` en lecture, `request.resource.data.participants` en création)
+- `users/{uid}/followers` et `/following` : lecture ouverte, écriture par tout utilisateur connecté (pas de vérification fine de "qui peut suivre qui" au niveau des règles — repose sur la logique applicative de `ProfileService.toggleFollow`)
+- ⚠️ `videos update` : actuellement ouvert à **tout utilisateur connecté**, pas seulement l'auteur — nécessaire pour permettre les compteurs (`likesCount`, `commentsCount`, `viewsCount`, `sharesCount`) incrémentés par d'autres utilisateurs que l'auteur. Pas de vérification fine que seuls ces champs-là sont modifiés — un utilisateur connecté pourrait techniquement modifier `caption` ou `videoUrl` d'une vidéo qui n'est pas la sienne. À durcir avant la production (ex: `request.resource.data.diff(resource.data).affectedKeys()` limité aux compteurs).
+- **Toute collection non listée ci-dessus reste bloquée par défaut.**
 
 ---
 
@@ -313,19 +346,20 @@ lib/
 
 ---
 
-## 8. État d'avancement (au 21/08/2026)
+## 8. État d'avancement (au 24/08/2026)
 
 **Fonctionnel et testé sur appareil réel (Infinix HOT 40i, APK debug)** :
 - Firebase correctement connecté (Auth + Firestore)
 - Inscription / création de compte → testée avec succès de bout en bout
 - Écran Paramètres : changement de langue, déconnexion, suppression de compte
 - Traductions : Feed, Chat, Recherche, Paramètres, Gold + 14 écrans complétés (Profil, Création/Publication, Business, Analytics, etc.)
+- Règles Firestore complètes publiées (users, businesses, videos+likes+comments, chats+messages, followers/following) — MAIS pas encore retestées en conditions réelles (Firestore ne contient toujours aucune vidéo/business/chat créé pour l'instant)
 
 **Connu comme non implémenté / à faire** :
 - Champ `scope` du modèle utilisateur (mentionné en commentaire seulement)
 - Suppression de compte en cascade (RGPD complet, nécessite une Cloud Function)
 - CGU réelles (actuellement un texte placeholder dans Paramètres)
-- Passerelle de paiement réelle pour MUHETO Gold
-- Firestore ne contient encore aucune collection autre que `users` (Feed vide, normal)
+- Passerelle de paiement réelle pour MUHETO Gold (voir faille de sécurité section 4.5)
+- Règle `videos update` trop permissive (tout utilisateur connecté, pas seulement l'auteur) — à durcir avant production, voir section 5
 - 2 warnings CI persistants (dépréciation Node.js 20 / `setup-java@v3` dans `build.yml`, sans impact fonctionnel)
 - Upload d'artefact APK configuré en `--debug`, pas encore en `--release`
