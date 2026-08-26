@@ -8,6 +8,7 @@ import '../../core/theme/app_theme.dart';
 import '../../services/auth_service.dart';
 import '../../services/notification_service.dart';
 import '../auth/welcome_screen.dart';
+import 'terms_screen.dart';
 import 'language_selector_sheet.dart';
 
 /// Écran Paramètres, accessible depuis le menu du Profil.
@@ -139,6 +140,13 @@ class SettingsScreen extends StatelessWidget {
             title: loc.t('profile.logout'),
             titleColor: AppColors.error,
             onTap: () => _confirmLogout(context, loc),
+          ),
+                    _SettingsTile(
+            icon: Icons.description_rounded,
+            title: loc.t('settings.terms'),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const TermsScreen()),
+            ),
           ),
           _SettingsTile(
             icon: Icons.delete_forever_rounded,

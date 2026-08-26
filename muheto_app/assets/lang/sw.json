@@ -77,5 +77,7 @@
   "settings.logoutConfirmMessage": "Utahitaji kuingia tena ili kufikia akaunti yako.",
   "settings.deleteAccount": "Futa akaunti yangu",
   "settings.deleteAccountConfirmTitle": "Futa akaunti yako?",
-  "settings.deleteAccountConfirmMessage": "Hatua hii haiwezi kutenduliwa. Wasifu wako utafutwa, lakini video na ujumbe wako uliopo unaweza kubaki unaonekana mahali pengine."
+  "settings.deleteAccountConfirmMessage": "Hatua hii haiwezi kutenduliwa. Wasifu wako utafutwa, lakini video na ujumbe wako uliopo unaweza kubaki unaonekana mahali pengine.",  "settings.terms": "Masharti ya Matumizi",
+  "settings.termsTitle": "Masharti ya Jumla ya Matumizi",
+  "settings.termsBody": "Kwa kuunda akaunti au kutumia MUHETO, unakubali masharti haya ya matumizi.\n\n1. Maudhui yaliyochapishwa\nUnabaki mmiliki wa video na machapisho yako. Kwa kuyachapisha, unatupa leseni ya kuyahifadhi na kuyasambaza ndani ya programu. Unakubali kutochapisha maudhui yoyote haramu, ya chuki, au ya vurugu.\n\n2. Akaunti ya mtumiaji\nUnawajibika kuweka nywila yako siri. Unaweza kufuta akaunti yako wakati wowote kutoka kwa Mipangilio.\n\n3. MUHETO Gold\nMasharti ya malipo na ufutaji wa usajili wa Gold yataainishwa kabla ya uzinduzi rasmi wa malipo.\n\n4. Usimamizi\nMUHETO inahifadhi haki ya kuondoa maudhui yoyote au kusimamisha akaunti yoyote isiyofuata masharti haya.\n\n5. Mawasiliano\nKwa maswali yoyote: contact@muheto.app\n\n⚠️ Hati hii ni kiolezo cha awali na lazima ipitiwe na mtaalamu wa sheria kabla ya uzinduzi wa uzalishaji."
 }

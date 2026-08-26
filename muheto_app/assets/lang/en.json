@@ -77,5 +77,7 @@
   "settings.logoutConfirmMessage": "You'll need to sign in again to access your account.",
   "settings.deleteAccount": "Delete my account",
   "settings.deleteAccountConfirmTitle": "Delete your account?",
-  "settings.deleteAccountConfirmMessage": "This action is irreversible. Your profile will be deleted, but your existing videos and messages may remain visible elsewhere."
+  "settings.deleteAccountConfirmMessage": "This action is irreversible. Your profile will be deleted, but your existing videos and messages may remain visible elsewhere.",  "settings.terms": "Terms of Use",
+  "settings.termsTitle": "Terms of Use",
+  "settings.termsBody": "By creating an account or using MUHETO, you agree to these terms of use.\n\n1. Published content\nYou remain the owner of your videos and posts. By publishing them, you grant us a license to host and distribute them within the app. You agree not to publish any illegal, hateful, or violent content.\n\n2. User account\nYou are responsible for keeping your password confidential. You can delete your account at any time from Settings.\n\n3. MUHETO Gold\nBilling and cancellation terms for the Gold subscription will be specified before the official payment launch.\n\n4. Moderation\nMUHETO reserves the right to remove any content or suspend any account that does not comply with these terms.\n\n5. Contact\nFor any questions: contact@muheto.app\n\n⚠️ This document is a starting template and must be reviewed by a legal professional before production launch."
 }
