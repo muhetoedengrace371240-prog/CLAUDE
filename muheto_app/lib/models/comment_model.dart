@@ -1,265 +1,56 @@
-# MEMO.md — Carte d'identité technique de MUHETO
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-> ⚠️ **Règle d'usage** : coller ce fichier au début de CHAQUE nouvelle conversation
-> avant de demander une nouvelle brique de code. Dire explicitement :
-> "Voici les règles de mon app [colle ce fichier]. Respecte EXACTEMENT ces noms,
-> ne renomme rien, n'invente pas de nouveaux champs sans me le signaler."
->
-> Après chaque session qui ajoute un champ, une fonction ou une collection,
-> **mettre à jour ce fichier** avant de fermer la conversation.
+/// Structure Firestore recommandée (sous-collection) :
+/// videos/{videoId}/comments/{commentId}
+///   - userId, username, avatarUrl, text
+///   - isGoldMember: bool (dénormalisé au moment du commentaire, pour
+///     afficher le badge VIP doré sans lecture supplémentaire par commentaire)
+///   - likesCount: number
+///   - createdAt: Timestamp
+class CommentModel {
+  final String id;
+  final String userId;
+  final String username;
+  final String avatarUrl;
+  final String text;
+  final bool isGoldMember;
+  final int likesCount;
+  final DateTime? createdAt;
 
-Dernière mise à jour : 24/08/2026
+  const CommentModel({
+    required this.id,
+    required this.userId,
+    required this.username,
+    required this.avatarUrl,
+    required this.text,
+    required this.isGoldMember,
+    required this.likesCount,
+    required this.createdAt,
+  });
 
-> **Statut de complétude** : modèles Dart (User, Business, Chat, Message, Video, Comment) documentés en détail.
-> Services (`business_service`, `chat_service`, `feed_service`, `gold_service`, `notification_service`,
-> `profile_service`, `search_service`) — **pas encore documentés en détail**, à faire dans une prochaine session.
-> Ne pas supposer leurs signatures de fonctions tant que cette note n'a pas disparu.
+  factory CommentModel.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data() ?? <String, dynamic>{};
+    return CommentModel(
+      id: doc.id,
+      userId: data['userId'] as String? ?? '',
+      username: data['username'] as String? ?? '',
+      avatarUrl: data['avatarUrl'] as String? ?? '',
+      text: data['text'] as String? ?? '',
+      isGoldMember: data['isGoldMember'] as bool? ?? false,
+      likesCount: (data['likesCount'] as num?)?.toInt() ?? 0,
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
+    );
+  }
 
----
-
-## 1. Identité du projet
-
-- **Nom** : MUHETO — "la voix de l'Afrique"
-- **Stack** : Flutter (Dart), Firebase (Auth + Firestore + Storage + Messaging)
-- **Dépôt** : GitHub privé, branche `main`, dossier du projet Flutter : `muheto_app/`
-- **CI/CD** : GitHub Actions (`.github/workflows/build.yml`), build APK debug automatique,
-  artefact téléchargeable nommé `app-debug`
-
-### Identifiants Android / Firebase (NE JAMAIS DÉSYNCHRONISER CES 3 VALEURS)
-- `applicationId` (Android, dans `android/app/build.gradle.kts`) : `com.mycompany.muheto`
-- `namespace` (Android, même fichier) : `com.example.muheto_app` *(legacy, ne pas toucher — différent de applicationId par choix historique)*
-- Projet Firebase actif : **`muheto-app`** (Project ID : `muheto-a905ug`)
-  - ⚠️ Il existe un second projet Firebase orphelin nommé `Muheto` (`muheto-db6d8`) — **NE PAS L'UTILISER**, il est vide et non connecté à l'app.
-- Fichier de config Android : `android/app/google-services.json` (présent, lié à `com.mycompany.muheto`)
-- Plugin Google Services déclaré dans `android/settings.gradle.kts` (version `4.4.2`) et activé dans `android/app/build.gradle.kts`
-
----
-
-## 2. Langues et traduction
-
-- **4 langues supportées**, dans cet ordre d'affichage :
-  - `rn` = Kirundi
-  - `fr` = Français (langue par défaut si rien n'est détecté)
-  - `en` = English
-  - `sw` = Kiswahili
-- Déclarées dans `lib/core/localization/app_localizations.dart` → constante `kSupportedLocales`
-- Fichiers de traduction : `assets/lang/{code}.json` (un JSON par langue, clés à points : `"settings.title"`, `"common.save"`, etc.)
-- Usage dans le code : `AppLocalizations.of(context).t('clé.exacte')`
-  - Si une clé manque, `t()` retourne la clé elle-même (pas de crash, mais visible en debug)
-- Gestion de la langue active : `lib/core/localization/locale_provider.dart` → `LocaleProvider` (ChangeNotifier), persisté via `SharedPreferences` (clé `muheto_locale_code`)
-- **Piège connu** : le Kirundi (`rn`) n'existe pas dans les données CLDR du package `intl` → se rabat sur `fr_FR` pour le formatage de dates. Ne pas essayer d'appeler `initializeDateFormatting('rn')`, ça n'existe pas.
-- Locales `intl` initialisées dans `main.dart` : `fr_FR`, `en_US`, `sw_TZ` (les 3 sont obligatoires — sans elles, plantage `LocaleDataException` dès qu'un écran affiche une date dans cette langue, ex. écran Gold)
-
----
-
-## 3. Modèle utilisateur (`lib/models/user_model.dart`)
-
-Collection Firestore : **`users/{uid}`**
-
-Champs réels de la classe `UserModel` (respecter ces noms EXACTEMENT, en camelCase) :
-
-| Champ Dart | Type | Notes |
-|---|---|---|
-| `uid` | `String` | = `doc.id`, pas stocké dans le document lui-même |
-| `username` | `String` | pseudonyme, normalisé en minuscules à l'inscription |
-| `displayName` | `String` | nom affiché, peut garder la casse d'origine |
-| `avatarUrl` | `String` | URL de l'avatar (vide au départ) |
-| `bio` | `String` | |
-| `isVerified` | `bool` | |
-| `isBusinessAccount` | `bool` | |
-| `isGoldMember` | `bool` | ⚠️ ne pas utiliser seul pour l'affichage — voir `isGoldActive` ci-dessous |
-| `goldExpirationDate` | `DateTime?` | stocké comme `Timestamp?` côté Firestore |
-| `followersCount` | `int` | |
-| `followingCount` | `int` | |
-| `likesCount` | `int` | |
-| `country` | `String` | code pays, ex. `"BI"` |
-| `language` | `String` | code langue, ex. `"fr"` |
-| `createdAt` | — | écrit uniquement à la création (`FieldValue.serverTimestamp()`), pas de champ Dart correspondant dans la classe |
-
-**Getter important** : `isGoldActive` (bool, calculé) = `isGoldMember == true` ET (`goldExpirationDate == null` OU `goldExpirationDate` dans le futur).
-→ **Toujours utiliser `isGoldActive` dans l'UI**, jamais `isGoldMember` seul (peut rester `true` après expiration si aucun job ne l'a remis à `false`).
-
-**Champ mentionné en commentaire mais PAS ENCORE implémenté** : `scope` (`"burundi" | "afrique" | "monde"`) — n'existe pas dans la classe Dart actuelle. Si une brique future en a besoin, il faut l'ajouter au modèle ET aux règles Firestore, pas juste au commentaire.
-
----
-
-## 3bis. Modèle Business (`lib/models/business_model.dart`)
-
-Collection Firestore : **`businesses/{businessId}`**
-
-| Champ Dart | Type | Notes |
-|---|---|---|
-| `id` | `String` | = `doc.id` |
-| `ownerId` | `String` | référence `users/{uid}` du compte Business propriétaire |
-| `name` | `String` | |
-| `category` | `String` | valeurs possibles : voir constante `kBusinessCategories` (Restaurant, Boutique, Beauté & Bien-être, Santé, Éducation, Technologie, Hôtellerie, Artisanat, Services, Autre) |
-| `description` | `String` | |
-| `logoUrl`, `bannerUrl` | `String` | Firebase Storage |
-| `address`, `city` | `String` | `city` par défaut `"Bujumbura"` |
-| `phoneNumber` | `String` | format international recommandé, ex. `"+25779123456"` |
-| `whatsappNumber` | `String` | optionnel |
-| `websiteUrl`, `instagramUrl`, `facebookUrl` | `String` | optionnels |
-| `openingHours` | `Map<String, String>` | clé = jour en français (voir `kWeekDaysFr`), valeur = `"08:00-18:00"` ou `"Fermé"` |
-| `isVerified` | `bool` | badge doré vérifié |
-| `isSponsored` | `bool` | mis en avant en tête de liste (offre payante) |
-| `createdAt` | `DateTime?` | |
-| `viewsCount`, `callClicksCount`, `websiteClicksCount`, `whatsappClicksCount` | `int` | compteurs analytics (Brique 13), incrémentés par `BusinessService` |
-
-**Champ auto-généré à l'écriture (pas dans la classe Dart)** : `nameLower` = `name.toLowerCase()`, écrit dans `toFirestore()` pour permettre la recherche par préfixe (Firestore compare les chaînes par ordre d'octets, donc la recherche a besoin d'une version normalisée).
-
-**Getter calculé** : `isOpenNow` (bool?) — se base sur `openingHours[jour courant]`, retourne `null` si l'horaire du jour est absent ou mal formaté (l'UI n'affiche alors pas de badge).
-
----
-
-## 3ter. Modèle Chat (`lib/models/chat_model.dart`)
-
-Collection Firestore : **`chats/{chatId}`**
-
-Vu du point de vue de l'utilisateur connecté — les champs `other*` désignent toujours l'interlocuteur.
-
-| Champ Dart | Type | Notes |
-|---|---|---|
-| `id` | `String` | |
-| `participants` | `List<String>` | les 2 uid |
-| `otherUserId`, `otherUsername`, `otherAvatarUrl`, `otherIsGoldMember` | — | dérivés de `participantsInfo[otherUid]` (dénormalisé côté Firestore) |
-| `lastMessage`, `lastMessageSenderId`, `lastMessageAt` | — | |
-| `unreadCount` | `int` | dérivé de `unreadCounts[currentUid]` |
-
-**Structure Firestore réelle** (pas 1:1 avec la classe Dart, car dénormalisée) :
-```
-chats/{chatId}
-  participants: array<string>
-  participantsInfo: map<uid, {username, avatarUrl, isGoldMember}>
-  lastMessage, lastMessageSenderId, lastMessageAt
-  unreadCounts: map<uid, number>
-  createdAt: Timestamp
-```
-
-### Sous-collection Messages (`lib/models/message_model.dart`)
-**`chats/{chatId}/messages/{messageId}`**
-
-| Champ Dart | Type |
-|---|---|
-| `id`, `senderId`, `text`, `createdAt` | `String` / `DateTime?` |
-
----
-
-## 3quater. Modèle Video (`lib/models/video_model.dart`)
-
-Collection Firestore : **`videos/{videoId}`**
-
-| Champ Dart | Type | Notes |
-|---|---|---|
-| `id`, `userId`, `username`, `userAvatarUrl`, `isVerified` | — | dénormalisé depuis l'auteur |
-| `videoUrl`, `thumbnailUrl` | `String` | |
-| `caption` | `String` | |
-| `hashtags` | `List<String>` | |
-| `musicName` | `String` | défaut `"Son original - Muheto"` |
-| `category` | `String` | ex. `"humour"`, `"musique"`, `"business"` |
-| `scope` | `ContentScope` (enum) | **`burundi` \| `afrique` \| `monde`** — choisi à l'onboarding ("Choisis ton univers"). ⚠️ Ce `scope` est celui de la vidéo, PAS un champ de `UserModel` (qui n'a pas encore ce champ, voir section 3) |
-| `language` | `String` | `"rn" \| "fr" \| "en" \| "sw"` |
-| `likesCount`, `commentsCount`, `sharesCount`, `viewsCount` | `int` | |
-| `createdAt` | `DateTime?` | |
-| `isBusinessPost` | `bool` | |
-| `searchKeywords` | `List<String>` | dénormalisé (légende + hashtags en minuscules) pour la recherche plein-texte (Brique 12), voir `buildSearchKeywords` |
-
-Méthode utilitaire : `copyWith({likesCount, commentsCount, sharesCount})` pour mises à jour optimistes côté UI.
-
-### Sous-collection Comments (`lib/models/comment_model.dart`)
-**`videos/{videoId}/comments/{commentId}`**
-
-| Champ Dart | Type | Notes |
-|---|---|---|
-| `id`, `userId`, `username`, `avatarUrl`, `text` | — | |
-| `isGoldMember` | `bool` | dénormalisé au moment du commentaire (évite une lecture supplémentaire par commentaire pour afficher le badge VIP) |
-| `likesCount` | `int` | |
-| `createdAt` | `DateTime?` | |
-
----
-
-## 4. Authentification (`lib/services/auth_service.dart`)
-
-Classe `AuthService`, méthodes disponibles :
-- `signIn({email, password})`
-- `signUp({username, email, password})` → vérifie d'abord l'unicité du username (lecture Firestore, doit rester accessible sans authentification — voir règles ci-dessous), crée le compte Firebase Auth, écrit le document `users/{uid}`
-- `signOut()`
-- `deleteAccount({password})` → ré-authentifie puis supprime le document Firestore ET le compte Auth. ⚠️ Ne supprime PAS en cascade les vidéos/chats/fiche Business (pas de conformité RGPD complète pour l'instant)
-- `sendPasswordResetEmail(email)`
-- `friendlyErrorMessage(error)` → messages d'erreur en français pour l'UI
-- `currentUser` (getter), `authStateChanges` (Stream)
-
----
-
-## 5. Règles de sécurité Firestore (état actuel, publié)
-
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{userId} {
-      allow read: if true;
-      allow create, update: if request.auth != null && request.auth.uid == userId;
-      allow delete: if false;
-    }
-    match /{document=**} {
-      allow read, write: if false;
-    }
+  Map<String, dynamic> toFirestore() {
+    return {
+      'userId': userId,
+      'username': username,
+      'avatarUrl': avatarUrl,
+      'text': text,
+      'isGoldMember': isGoldMember,
+      'likesCount': likesCount,
+      'createdAt': FieldValue.serverTimestamp(),
+    };
   }
 }
-```
-- Lecture de `users/*` : **ouverte à tous**, y compris non connectés (nécessaire pour la vérification d'unicité du pseudonyme à l'inscription)
-- Écriture de `users/{userId}` : uniquement le propriétaire, connecté
-- Suppression directe : jamais autorisée par les règles (passe par `deleteAccount()` côté app)
-- **Toute autre collection future (posts, chats, business...) est bloquée par défaut** tant que des règles dédiées ne sont pas ajoutées ici.
-
----
-
-## 6. Structure des dossiers (`lib/`)
-
-```
-lib/
-  core/
-    localization/   → app_localizations.dart, locale_provider.dart
-    navigation/      → app_navigator_key.dart, app_routes.dart
-    theme/           → app_theme.dart (AppColors, AppTheme.darkTheme)
-    firebase/        → firebase_bootstrap.dart
-  features/
-    auth/            → splash_screen.dart, welcome_screen.dart, ...
-    settings/        → settings_screen.dart, language_selector_sheet.dart
-    (autres features par écran/domaine)
-  models/            → user_model.dart, ...
-  services/          → auth_service.dart, notification_service.dart, ...
-  main.dart
-```
-
----
-
-## 7. `main.dart` — séquence d'initialisation obligatoire (ordre important)
-
-1. `WidgetsFlutterBinding.ensureInitialized()`
-2. `FirebaseBootstrap.initialize()` (dans un try/catch — l'app peut continuer en mode dégradé si ça échoue, mais ça ne devrait plus arriver depuis la correction du 21/08/2026)
-3. `timeago.setLocaleMessages('fr', ...)` + `'fr_short'` (requis pour les timestamps relatifs dans le Chat)
-4. `initializeDateFormatting('fr_FR')`, `('en_US')`, `('sw_TZ')` — les 3, jamais une seule
-5. `FirebaseMessaging.onBackgroundMessage(...)` — AVANT `runApp()`, doit être une fonction top-level
-6. `runApp()` avec `ChangeNotifierProvider(create: (_) => LocaleProvider()..init())` englobant tout `MaterialApp`
-
-`MaterialApp` utilise : `navigatorKey: appNavigatorKey`, `initialRoute` + `onGenerateRoute` via `AppRoutes`, les 4 `localizationsDelegates` standards + `AppLocalizationsDelegate()`.
-
----
-
-## 8. État d'avancement (au 21/08/2026)
-
-**Fonctionnel et testé sur appareil réel (Infinix HOT 40i, APK debug)** :
-- Firebase correctement connecté (Auth + Firestore)
-- Inscription / création de compte → testée avec succès de bout en bout
-- Écran Paramètres : changement de langue, déconnexion, suppression de compte
-- Traductions : Feed, Chat, Recherche, Paramètres, Gold + 14 écrans complétés (Profil, Création/Publication, Business, Analytics, etc.)
-
-**Connu comme non implémenté / à faire** :
-- Champ `scope` du modèle utilisateur (mentionné en commentaire seulement)
-- Suppression de compte en cascade (RGPD complet, nécessite une Cloud Function)
-- CGU réelles (actuellement un texte placeholder dans Paramètres)
-- Passerelle de paiement réelle pour MUHETO Gold
-- Firestore ne contient encore aucune collection autre que `users` (Feed vide, normal)
-- 2 warnings CI persistants (dépréciation Node.js 20 / `setup-java@v3` dans `build.yml`, sans impact fonctionnel)
-- Upload d'artefact APK configuré en `--debug`, pas encore en `--release`
