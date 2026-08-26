@@ -8,12 +8,12 @@
 > Après chaque session qui ajoute un champ, une fonction ou une collection,
 > **mettre à jour ce fichier** avant de fermer la conversation.
 
-Dernière mise à jour : 24/08/2026
+Dernière mise à jour : 26/08/2026
 
 > **Statut de complétude** : modèles Dart (User, Business, Chat, Message, Video, Comment) ET
 > tous les services (`auth`, `business`, `chat`, `feed`, `gold`, `notification`, `profile`, `search`)
-> sont maintenant documentés en détail. Ce fichier reflète fidèlement le code tel qu'il existait
-> au 24/08/2026 — toute évolution du code doit être répercutée ici.
+> sont documentés en détail. Ce fichier reflète fidèlement le code tel qu'il existait au 26/08/2026 —
+> toute évolution du code doit être répercutée ici.
 
 ---
 
@@ -49,6 +49,8 @@ Dernière mise à jour : 24/08/2026
 - Gestion de la langue active : `lib/core/localization/locale_provider.dart` → `LocaleProvider` (ChangeNotifier), persisté via `SharedPreferences` (clé `muheto_locale_code`)
 - **Piège connu** : le Kirundi (`rn`) n'existe pas dans les données CLDR du package `intl` → se rabat sur `fr_FR` pour le formatage de dates. Ne pas essayer d'appeler `initializeDateFormatting('rn')`, ça n'existe pas.
 - Locales `intl` initialisées dans `main.dart` : `fr_FR`, `en_US`, `sw_TZ` (les 3 sont obligatoires — sans elles, plantage `LocaleDataException` dès qu'un écran affiche une date dans cette langue, ex. écran Gold)
+- **Second piège Kirundi (différent du précédent, découvert le 26/08/2026)** : le Kirundi n'est pas non plus une des langues nativement connues par les **widgets internes de Flutter** (`MaterialLocalizations`, `WidgetsLocalizations` — utilisés par `AppBar`, `TabBar`, etc., PAS par nos propres traductions). Sans correctif, tout écran utilisant une `AppBar` ou une `TabBar` plante avec *"No MaterialLocalizations found"* dès que la langue active est le Kirundi — même si nos propres traductions (`AppLocalizationsDelegate`) fonctionnent très bien. Un écran sans `AppBar`/`TabBar` (comme le Feed) ne déclenche pas l'erreur, ce qui peut faire croire à tort que seul cet écran est concerné.
+  - **Corrigé** via `lib/core/localization/kirundi_fallback_delegates.dart` : deux classes (`KirundiMaterialLocalizationsDelegate`, `KirundiWidgetsLocalizationsDelegate`) qui font croire à Flutter qu'on est en français UNIQUEMENT pour ces réglages internes, quand la langue active est `'rn'`. Nos propres traductions restent bien en Kirundi (mécanisme totalement séparé). Ces 2 délégués sont ajoutés dans `main.dart`, dans la liste `localizationsDelegates`.
 
 ---
 
@@ -250,6 +252,19 @@ Méthode utilitaire : `copyWith({likesCount, commentsCount, sharesCount})` pour 
 
 ---
 
+### 4.9 Firebase Storage — ⚠️ NON FONCTIONNEL, plan Blaze requis (découvert le 26/08/2026)
+- Chemins Storage utilisés dans le code (via `UploadService`, `BusinessFormScreen`, `EditProfileScreen`) :
+  - `videos/{uid}/{videoId}.mp4`
+  - `thumbnails/{uid}/{videoId}.jpg`
+  - `business_logos/{businessId}.jpg`
+  - `business_banners/{businessId}.jpg`
+  - `avatars/{uid}.jpg`
+- **Blocage actuel** : le projet Firebase est sur le plan gratuit **Spark**, qui ne permet PAS d'activer Cloud Storage du tout (pas juste une question de règles de sécurité — le service lui-même n'est pas activable). Il faut passer sur le plan **Blaze** (paiement à l'usage), ce qui nécessite de lier une carte bancaire (même virtuelle/prépayée) au compte Google Cloud — même si en pratique aucun frais n'est prélevé tant qu'on reste sous les quotas gratuits (5 Go de stockage, 1 Go de téléchargement/jour, renouvelés chaque mois).
+- **Conséquence concrète tant que ce n'est pas fait** : toute action qui upload un fichier (publier une vidéo, changer d'avatar, ajouter un logo/bannière Business) échoue avec un message générique côté UI (ex. *"La publication a échoué. Vérifie ta connexion et réessaie."* dans `publish_screen.dart`) — le vrai message d'erreur Firebase est avalé, pas affiché.
+- **Pas encore fait au 26/08/2026** : carte bancaire pas encore disponible côté porteur du projet. Ni les règles de sécurité Storage (`storage.rules`, différentes des règles Firestore) n'ont été écrites — à faire une fois Blaze activé, en s'inspirant des chemins listés ci-dessus (lecture publique, écriture réservée au `{uid}`/`{businessId}` concerné).
+
+---
+
 ## 5. Règles de sécurité Firestore (état actuel, publié le 24/08/2026)
 
 ```
@@ -346,20 +361,30 @@ lib/
 
 ---
 
-## 8. État d'avancement (au 24/08/2026)
+## 8. État d'avancement (au 26/08/2026)
 
 **Fonctionnel et testé sur appareil réel (Infinix HOT 40i, APK debug)** :
 - Firebase correctement connecté (Auth + Firestore)
 - Inscription / création de compte → testée avec succès de bout en bout
-- Écran Paramètres : changement de langue, déconnexion, suppression de compte
+- Connexion avec un compte existant → testée avec succès
+- Navigation entre TOUS les onglets (Ahabanza, Menya, Ubutumwa, Umwirondoro) sans plantage — bug Kirundi/MaterialLocalizations corrigé le 26/08
+- Écran Paramètres complet : changement de langue, déconnexion, **Conditions d'utilisation** (nouveau, texte affiché avec succès), suppression de compte
 - Traductions : Feed, Chat, Recherche, Paramètres, Gold + 14 écrans complétés (Profil, Création/Publication, Business, Analytics, etc.)
-- Règles Firestore complètes publiées (users, businesses, videos+likes+comments, chats+messages, followers/following) — MAIS pas encore retestées en conditions réelles (Firestore ne contient toujours aucune vidéo/business/chat créé pour l'instant)
+- Règles Firestore complètes publiées (users, businesses, videos+likes+comments, chats+messages, followers/following)
+
+**Bugs corrigés le 26/08/2026** :
+- Écran rouge "No MaterialLocalizations found" sur tous les onglets sauf le Feed → voir section 2 (délégués de repli Kirundi)
+- `comment_model.dart` s'était retrouvé accidentellement écrasé par le contenu de ce fichier MEMO.md (probable copier-coller malheureux entre onglets VS Code) → restauré. **Leçon apprise : après toute session de gros copier-coller entre plusieurs fichiers ouverts simultanément, vérifier rapidement le début de chaque fichier concerné avant de commit/push.**
+
+**Bloqué / en attente** :
+- **Publication de vidéo, changement d'avatar, logo/bannière Business** : tous impossibles tant que Firebase Storage n'est pas activé (nécessite le plan Blaze + carte bancaire) — voir section 4.9. Message d'erreur générique côté UI, ne pas confondre avec un bug de code.
 
 **Connu comme non implémenté / à faire** :
 - Champ `scope` du modèle utilisateur (mentionné en commentaire seulement)
 - Suppression de compte en cascade (RGPD complet, nécessite une Cloud Function)
-- CGU réelles (actuellement un texte placeholder dans Paramètres)
+- Vraies CGU validées par un professionnel du droit (le texte actuel dans `settings.termsBody` est un modèle de départ fonctionnel mais non juridiquement validé)
 - Passerelle de paiement réelle pour MUHETO Gold (voir faille de sécurité section 4.5)
+- Règles de sécurité Storage (`storage.rules`) — à écrire une fois Blaze activé
 - Règle `videos update` trop permissive (tout utilisateur connecté, pas seulement l'auteur) — à durcir avant production, voir section 5
 - 2 warnings CI persistants (dépréciation Node.js 20 / `setup-java@v3` dans `build.yml`, sans impact fonctionnel)
 - Upload d'artefact APK configuré en `--debug`, pas encore en `--release`
