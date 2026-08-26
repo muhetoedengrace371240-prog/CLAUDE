@@ -7,6 +7,7 @@ import 'package:timeago/timeago.dart' as timeago;
 
 import 'core/firebase/firebase_bootstrap.dart';
 import 'core/localization/app_localizations.dart';
+import 'core/localization/kirundi_fallback_delegates.dart';
 import 'core/localization/locale_provider.dart';
 import 'core/navigation/app_navigator_key.dart';
 import 'core/navigation/app_routes.dart';
@@ -61,11 +62,13 @@ class MuhetoApp extends StatelessWidget {
       locale: localeProvider.locale,
       supportedLocales: kSupportedLocales,
       localizationsDelegates: const [
-        AppLocalizationsDelegate(),
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
+  AppLocalizationsDelegate(),
+  KirundiMaterialLocalizationsDelegate(),
+  GlobalMaterialLocalizations.delegate,
+  KirundiWidgetsLocalizationsDelegate(),
+  GlobalWidgetsLocalizations.delegate,
+  GlobalCupertinoLocalizations.delegate,
+],
       initialRoute: AppRoutes.splash,
       onGenerateRoute: AppRoutes.onGenerateRoute,
       home: const SplashScreen(),
