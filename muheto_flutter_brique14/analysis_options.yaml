@@ -1,0 +1,23 @@
+# Active le set de règles recommandé par l'équipe Flutter (déjà présent en
+# dev_dependencies via `flutter_lints`, mais sans ce fichier `flutter analyze`
+# ne l'appliquait jamais — corrigé en Brique 14).
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    # Règles additionnelles utiles au-delà du set de base, notamment pour
+    # repérer les usages d'API dépréciées le plus tôt possible.
+    - avoid_print
+    - prefer_const_constructors
+    - prefer_const_literals_to_create_immutables
+    - sort_child_properties_last
+    - unnecessary_const
+
+analyzer:
+  # `flutter analyze` échoue désormais sur tout avertissement de
+  # dépréciation (`deprecated_member_use`) plutôt que de le laisser passer
+  # silencieusement — c'est la meilleure façon de garantir qu'aucune API
+  # dépréciée ne traîne dans le code au fil des futures briques.
+  errors:
+    deprecated_member_use: error
+    deprecated_member_use_from_same_package: error
