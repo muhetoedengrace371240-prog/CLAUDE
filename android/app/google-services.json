@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "674852682036",
+    "project_id": "muheto-a905ug",
+    "storage_bucket": "muheto-a905ug.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:674852682036:android:425e11a2011a4994b5cd61",
+        "android_client_info": {
+          "package_name": "com.mycompany.muheto"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDg5eKww8Rk52r4wzW1FQrGQnAFgAwxsQ8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

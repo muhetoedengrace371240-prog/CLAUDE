@@ -22,6 +22,8 @@ class UserModel {
   final bool isBusinessAccount;
   final bool isGoldMember;
   final DateTime? goldExpirationDate;
+  final bool isAdmin;
+  final bool isBanned;
 
   final int followersCount;
   final int followingCount;
@@ -40,6 +42,8 @@ class UserModel {
     required this.isBusinessAccount,
     required this.isGoldMember,
     required this.goldExpirationDate,
+    required this.isAdmin,
+    required this.isBanned,
     required this.followersCount,
     required this.followingCount,
     required this.likesCount,
@@ -72,6 +76,8 @@ class UserModel {
       isBusinessAccount: data['isBusinessAccount'] as bool? ?? false,
       isGoldMember: data['isGoldMember'] as bool? ?? false,
       goldExpirationDate: (data['goldExpirationDate'] as Timestamp?)?.toDate(),
+      isAdmin: data['isAdmin'] as bool? ?? false,
+      isBanned: data['isBanned'] as bool? ?? false,
       followersCount: (data['followersCount'] as num?)?.toInt() ?? 0,
       followingCount: (data['followingCount'] as num?)?.toInt() ?? 0,
       likesCount: (data['likesCount'] as num?)?.toInt() ?? 0,
@@ -91,6 +97,8 @@ class UserModel {
       'isGoldMember': isGoldMember,
       'goldExpirationDate':
           goldExpirationDate != null ? Timestamp.fromDate(goldExpirationDate!) : null,
+      'isAdmin': isAdmin,
+      'isBanned': isBanned,
       'followersCount': followersCount,
       'followingCount': followingCount,
       'likesCount': likesCount,

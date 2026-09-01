@@ -55,6 +55,8 @@ class AuthService {
       isBusinessAccount: false,
       isGoldMember: false,
       goldExpirationDate: null,
+      isAdmin: false,
+      isBanned: false,
       followersCount: 0,
       followingCount: 0,
       likesCount: 0,
@@ -79,6 +81,28 @@ class AuthService {
   }
 
   Future<void> signOut() => _auth.signOut();
+    /// Supprime le compte de l'utilisateur connecté après ré-authentification
+  /// par mot de passe. Supprime le document Firestore `users/{uid}` puis
+  /// le compte Firebase Auth.
+  ///
+  /// ⚠️ Ne supprime PAS en cascade les vidéos, commentaires, chats ou la
+  /// fiche Business — une vraie conformité RGPD nécessiterait une Cloud
+  /// Function `onDelete` côté serveur (voir la brique de suivi correspondante).
+  Future<void> deleteAccount({required String password}) async {
+    final user = _auth.currentUser;
+    if (user == null || user.email == null) {
+      throw StateError('Aucun utilisateur connecté.');
+    }
+
+    final credential = EmailAuthProvider.credential(
+      email: user.email!,
+      password: password,
+    );
+    await user.reauthenticateWithCredential(credential);
+
+    await _db.collection('users').doc(user.uid).delete();
+    await user.delete();
+  }
 
   /// Transforme les codes d'erreur Firebase en messages compréhensibles
   /// pour l'utilisateur, en français.

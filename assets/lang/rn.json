@@ -74,5 +74,10 @@
   "lang.sw": "Igiswahiri",
   "settings.title": "Igenamiterere",
   "settings.logoutConfirmTitle": "Gusohoka?",
-  "settings.logoutConfirmMessage": "Uzosubira kwinjira kugira ubone konte yawe."
+  "settings.logoutConfirmMessage": "Uzosubira kwinjira kugira ubone konte yawe.",
+  "settings.deleteAccount": "Siba konte yanje",
+  "settings.deleteAccountConfirmTitle": "Siba konte yawe?",
+  "settings.deleteAccountConfirmMessage": "Iki gikorwa ntigisubirwamwo. Umwirondoro wawe uzosibwa, ariko amashusho n'ubutumwa vyawe bishobora kuguma bigaragara ahandi.",  "settings.terms": "Amabwirizwa yo Gukoresha",
+  "settings.termsTitle": "Amabwirizwa Rusange yo Gukoresha",
+  "settings.termsBody": "Mu gufungura konte canke gukoresha MUHETO, wemera aya mabwirizwa yo gukoresha.\n\n1. Ibirimwo bisohotswe\nUguma umunyamwabo w'amashusho n'ivyo usohora. Mu kubisohora, uduha uburenganzira bwo kubibika no kubikwiza muri porogaramu. Wemera kutasohora ikirimwo icarico cose kidasanzwe, gitera urwanko, canke gitera urugomo.\n\n2. Konte y'ukoresha\nUrafise inshingano yo kubika ijambo ry'ibanga ryawe mu bwiherero. Ushobora gusiba konte yawe igihe icarico cose uhereye ku Igenamiterere.\n\n3. MUHETO Gold\nAmabwirizwa y'ubwishuzi n'ihagarikwa ry'ubwiyunge bwa Gold azosobanurwa imbere y'itangwa rya kare ry'ubwishuzi.\n\n4. Igenzurwa\nMUHETO ifise uburenganzira bwo gukura ikirimwo cose canke guhagarika konte iyariyo yose itubahiriza aya mabwirizwa.\n\n5. Aho gushikirwa\nKu bibazo vyose: contact@muheto.app\n\n⚠️ Iki gitabu ni icitegererezo co gutangura kandi kigomba kurabwa n'inzobere mu mategeko imbere y'itangwa rya nyakuri."
 }

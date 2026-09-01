@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../../core/navigation/app_routes.dart';
 import '../../core/theme/app_theme.dart';
 import '../../services/auth_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import 'banned_screen.dart';
 import '../navigation/main_navigation_shell.dart';
 import 'welcome_screen.dart';
 
@@ -36,17 +39,28 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     _navigateAfterDelay();
   }
 
-  Future<void> _navigateAfterDelay() async {
+    Future<void> _navigateAfterDelay() async {
     await Future.delayed(const Duration(milliseconds: 2000));
     if (!mounted) return;
 
-    final isLoggedIn = _authService.currentUser != null;
-    if (isLoggedIn) {
-      if (!mounted) return;
-      Navigator.of(context).pushReplacementNamed(AppRoutes.home);
-    } else {
+    final user = _authService.currentUser;
+    if (user == null) {
       if (!mounted) return;
       Navigator.of(context).pushReplacementNamed(AppRoutes.welcome);
+      return;
+    }
+
+    // Compte connecté : on vérifie s'il est banni avant de continuer.
+    final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    final isBanned = doc.data()?['isBanned'] as bool? ?? false;
+    if (!mounted) return;
+
+    if (isBanned) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const BannedScreen()),
+      );
+    } else {
+      Navigator.of(context).pushReplacementNamed(AppRoutes.home);
     }
   }
 
