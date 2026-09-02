@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../../core/navigation/app_routes.dart';
 import '../../core/theme/app_theme.dart';
 import '../../services/auth_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import 'banned_screen.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -43,7 +46,19 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _passwordController.text,
       );
       if (!mounted) return;
-      Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
+
+      final uid = _authService.currentUser!.uid;
+      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final isBanned = doc.data()?['isBanned'] as bool? ?? false;
+      if (!mounted) return;
+
+      if (isBanned) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const BannedScreen()),
+        );
+      } else {
+        Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() => _errorMessage = _authService.friendlyErrorMessage(e));
