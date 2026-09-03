@@ -388,3 +388,27 @@ lib/
 - Règle `videos update` trop permissive (tout utilisateur connecté, pas seulement l'auteur) — à durcir avant production, voir section 5
 - 2 warnings CI persistants (dépréciation Node.js 20 / `setup-java@v3` dans `build.yml`, sans impact fonctionnel)
 - Upload d'artefact APK configuré en `--debug`, pas encore en `--release`
+
+---
+
+## 9. Système Admin / Modération (ajouté le 03/09/2026)
+
+**Nouveaux champs sur `UserModel`** : `isAdmin` (bool, défaut `false`), `isBanned` (bool, défaut `false`) — présents dans le modèle Dart, dans `AuthService.signUp()`, et dans les règles Firestore.
+
+**Fonctionnement** :
+- Un compte avec `isBanned: true` est bloqué à la connexion (vérifié dans `splash_screen.dart` ET `login_screen.dart` — les deux endroits sont nécessaires, sinon la connexion manuelle contourne le blocage) → redirigé vers `BannedScreen`.
+- Un compte avec `isAdmin: true` voit apparaître un bouton "Modération" dans Paramètres, menant à `AdminScreen` (3 onglets : Vidéos, Utilisateurs, Business), avec actions : supprimer une vidéo, bannir/débannir un utilisateur, supprimer une fiche Business.
+- Nouveau service : `lib/services/admin_service.dart`.
+- Règles Firestore mises à jour avec une fonction `isAdmin()` réutilisable ; un utilisateur ne peut pas se donner `isAdmin`/`isBanned` à lui-même via une simple modification de sa fiche.
+- Mon compte `testmuheto2` (uid `Ic0VO9XjKUUlpTk1EPwfotynUKl2`) est admin.
+
+**⚠️ Piège découvert le 03/09/2026 : deux dossiers Git imbriqués**
+Le dossier `C:\Users\LENOVO\Downloads\CLAUDE\muheto_app` est la RACINE du vrai dépôt Git (le `.git` est là). Le dossier `C:\Users\LENOVO\Downloads\CLAUDE` (un niveau au-dessus) est un AUTRE dépôt Git séparé et périmé.
+**Règle absolue : toute commande `git` (add/commit/push) doit être lancée depuis `...\CLAUDE\muheto_app`, jamais depuis `...\CLAUDE` tout seul.** Vérifier que l'invite du terminal se termine bien par `\muheto_app>` avant de taper une commande git.
+Le fichier `build.yml` utilisé par GitHub Actions est celui dans `muheto_app\.github\workflows\build.yml` (PAS celui dans `CLAUDE\.github\...`, qui est un fantôme ignoré par le vrai dépôt).
+
+**⚠️ Piège possible en créant un nouveau fichier dans VS Code** : si on clique droit sur un sous-dossier au lieu du dossier parent visé, VS Code peut créer un dossier imbriqué en double (ex: `lib/services/lib/services/`). Toujours vérifier le chemin complet affiché dans l'onglet après création d'un fichier.
+
+**Note : Firestore ≠ Authentication**. La liste "Utilisateurs" dans `AdminScreen` lit uniquement la collection Firestore `users` — pas la liste des comptes dans Firebase Authentication. Des comptes peuvent exister dans Authentication sans fiche Firestore correspondante (inscriptions interrompues) ; ils sont invisibles dans l'outil de modération et sans danger, pas la peine de les traiter en priorité.
+
+**Compte de test `ng21`** (uid `T4XoEKeZYpSGek4djGZgA51G7Qz1`) : a été banni/débanni plusieurs fois pendant les tests du 03/09/2026 — vérifier son état actuel si besoin.
