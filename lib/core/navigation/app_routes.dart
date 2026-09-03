@@ -4,6 +4,7 @@ import '../../features/auth/login_screen.dart';
 import '../../features/auth/register_screen.dart';
 import '../../features/auth/splash_screen.dart';
 import '../../features/auth/welcome_screen.dart';
+import '../../features/admin/admin_screen.dart';
 import '../../features/auth/banned_screen.dart';
 import '../../features/business/business_screen.dart';
 import '../../features/create/create_screen.dart';
@@ -24,6 +25,7 @@ class AppRoutes {
   static const splash = '/';
   static const welcome = '/welcome';
   static const banned = '/banned';
+  static const admin = '/admin';
   static const login = '/login';
   static const register = '/register';
   static const home = '/home';
@@ -47,6 +49,8 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const WelcomeScreen());
       case AppRoutes.banned:
         return MaterialPageRoute(builder: (_) => const BannedScreen());
+      case AppRoutes.admin:
+        return MaterialPageRoute(builder: (_) => const AdminScreen());
       case AppRoutes.login:
         return MaterialPageRoute(builder: (_) => const LoginScreen());
       case AppRoutes.register:

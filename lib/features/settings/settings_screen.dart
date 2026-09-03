@@ -7,6 +7,10 @@ import '../../core/localization/locale_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../services/auth_service.dart';
 import '../../services/notification_service.dart';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../admin/admin_screen.dart';
 import '../auth/welcome_screen.dart';
 import 'terms_screen.dart';
 import 'language_selector_sheet.dart';
@@ -133,6 +137,23 @@ class SettingsScreen extends StatelessWidget {
             title: loc.t('settings.language'),
             subtitle: currentLanguageLabel,
             onTap: () => showLanguageSelectorSheet(context),
+          ),
+                    FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+            future: FirebaseFirestore.instance
+                .collection('users')
+                .doc(FirebaseAuth.instance.currentUser?.uid)
+                .get(),
+            builder: (context, snapshot) {
+              final isAdmin = snapshot.data?.data()?['isAdmin'] as bool? ?? false;
+              if (!isAdmin) return const SizedBox.shrink();
+              return _SettingsTile(
+                icon: Icons.shield_moon_rounded,
+                title: 'Modération',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AdminScreen()),
+                ),
+              );
+            },
           ),
           const Divider(color: AppColors.surfaceElevated, height: 32, indent: 20, endIndent: 20),
           _SettingsTile(
