@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../services/auth_service.dart';
+import '../../core/navigation/app_routes.dart';
 
 /// Écran affiché à la place du Feed quand le compte de l'utilisateur
 /// connecté a été banni (isBanned == true sur son document users/{uid}).
@@ -41,7 +42,14 @@ class BannedScreen extends StatelessWidget {
               ),
               const SizedBox(height: 32),
               OutlinedButton(
-                onPressed: () => AuthService().signOut(),
+                onPressed: () async {
+                  await AuthService().signOut();
+                  if (!context.mounted) return;
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    AppRoutes.welcome,
+                    (route) => false,
+                  );
+                },
                 child: const Text('Se déconnecter'),
               ),
             ],
