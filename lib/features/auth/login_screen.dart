@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/localization/app_localizations.dart';
 import '../../core/navigation/app_routes.dart';
 import '../../core/theme/app_theme.dart';
 import '../../services/auth_service.dart';
@@ -87,9 +88,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+
     return Scaffold(
       backgroundColor: AppColors.black,
-      appBar: AppBar(title: const Text('Connexion TEST V2')),
+      appBar: AppBar(title: Text(loc.t('auth.loginTitle'))),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -98,23 +101,23 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Content de te revoir 👋',
-                  style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
+                Text(
+                  loc.t('auth.loginGreeting'),
+                  style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 6),
-                const Text(
-                  'Connecte-toi pour retrouver ta communauté.',
-                  style: TextStyle(color: Colors.white54, fontSize: 13),
+                Text(
+                  loc.t('auth.loginSubtitle'),
+                  style: const TextStyle(color: Colors.white54, fontSize: 13),
                 ),
                 const SizedBox(height: 28),
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    hintText: 'Adresse email',
-                    prefixIcon: Icon(Icons.email_outlined, color: AppColors.gold),
+                  decoration: InputDecoration(
+                    hintText: loc.t('auth.email'),
+                    prefixIcon: const Icon(Icons.email_outlined, color: AppColors.gold),
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) return 'Email requis.';
@@ -128,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   obscureText: _obscurePassword,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    hintText: 'Mot de passe',
+                    hintText: loc.t('auth.password'),
                     prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.gold),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -147,9 +150,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: _isLoading ? null : _forgotPassword,
-                    child: const Text(
-                      'Mot de passe oublié ?',
-                      style: TextStyle(color: AppColors.goldLight, fontSize: 12.5),
+                    child: Text(
+                      loc.t('auth.forgotPassword'),
+                      style: const TextStyle(color: AppColors.goldLight, fontSize: 12.5),
                     ),
                   ),
                 ),
@@ -158,7 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Text(_errorMessage!, style: const TextStyle(color: AppColors.error, fontSize: 13)),
                 ],
                 const SizedBox(height: 18),
-                                SizedBox(
+                SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _submit,
@@ -168,7 +171,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             width: 20,
                             child: CircularProgressIndicator(strokeWidth: 2.4, color: AppColors.black),
                           )
-                        : const Text('Se connecter', textAlign: TextAlign.center),
+                        : Text(loc.t('auth.login'), textAlign: TextAlign.center),
                   ),
                 ),
                 const SizedBox(height: 22),
@@ -178,13 +181,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         ? null
                         : () => Navigator.of(context).pushReplacementNamed(AppRoutes.register),
                     child: RichText(
-                      text: const TextSpan(
-                        style: TextStyle(color: Colors.white54, fontSize: 13),
+                      text: TextSpan(
+                        style: const TextStyle(color: Colors.white54, fontSize: 13),
                         children: [
-                          TextSpan(text: "Pas encore de compte ? "),
+                          TextSpan(text: "${loc.t('auth.noAccount')} "),
                           TextSpan(
-                            text: "S'inscrire",
-                            style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.w700),
+                            text: loc.t('auth.register'),
+                            style: const TextStyle(color: AppColors.gold, fontWeight: FontWeight.w700),
                           ),
                         ],
                       ),

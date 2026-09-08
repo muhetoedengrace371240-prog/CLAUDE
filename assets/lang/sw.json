@@ -29,6 +29,8 @@
   "auth.registerTitle": "Jisajili",
   "auth.loginSubtitle": "Ingia ili kuungana na jamii yako.",
   "auth.registerSubtitle": "Unda akaunti yako na ushiriki sauti yako.",
+  "auth.loginGreeting": "Karibu tena 👋",
+  "auth.registerGreeting": "Jiunge na jamii ya MUHETO 🎉",
   "feed.forYou": "Kwa Ajili Yako",
   "feed.following": "Ninaofuata",
   "feed.trending": "Yanayovuma",

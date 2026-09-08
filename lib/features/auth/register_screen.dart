@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/localization/app_localizations.dart';
 import '../../core/navigation/app_routes.dart';
 import '../../core/theme/app_theme.dart';
 import '../../services/auth_service.dart';
@@ -59,9 +60,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+
     return Scaffold(
       backgroundColor: AppColors.black,
-      appBar: AppBar(title: const Text('Inscription')),
+      appBar: AppBar(title: Text(loc.t('auth.registerTitle'))),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -70,22 +73,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Rejoins la communauté MUHETO 🎉',
-                  style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
+                Text(
+                  loc.t('auth.registerGreeting'),
+                  style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 6),
-                const Text(
-                  'Crée ton compte et partage ta voix.',
-                  style: TextStyle(color: Colors.white54, fontSize: 13),
+                Text(
+                  loc.t('auth.registerSubtitle'),
+                  style: const TextStyle(color: Colors.white54, fontSize: 13),
                 ),
                 const SizedBox(height: 28),
                 TextFormField(
                   controller: _usernameController,
                   style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    hintText: 'Pseudonyme (ex: irakozeee)',
-                    prefixIcon: Icon(Icons.alternate_email_rounded, color: AppColors.gold),
+                  decoration: InputDecoration(
+                    hintText: loc.t('auth.username'),
+                    prefixIcon: const Icon(Icons.alternate_email_rounded, color: AppColors.gold),
                   ),
                   validator: (value) {
                     if (value == null || value.trim().length < 3) {
@@ -102,9 +105,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    hintText: 'Adresse email',
-                    prefixIcon: Icon(Icons.email_outlined, color: AppColors.gold),
+                  decoration: InputDecoration(
+                    hintText: loc.t('auth.email'),
+                    prefixIcon: const Icon(Icons.email_outlined, color: AppColors.gold),
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) return 'Email requis.';
@@ -118,7 +121,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   obscureText: _obscurePassword,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    hintText: 'Mot de passe (6 caractères min.)',
+                    hintText: loc.t('auth.password'),
                     prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.gold),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -138,9 +141,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   controller: _confirmPasswordController,
                   obscureText: _obscurePassword,
                   style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    hintText: 'Confirme le mot de passe',
-                    prefixIcon: Icon(Icons.lock_outline_rounded, color: AppColors.gold),
+                  decoration: InputDecoration(
+                    hintText: loc.t('auth.confirmPassword'),
+                    prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.gold),
                   ),
                   validator: (value) {
                     if (value != _passwordController.text) {
@@ -154,7 +157,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Text(_errorMessage!, style: const TextStyle(color: AppColors.error, fontSize: 13)),
                 ],
                 const SizedBox(height: 22),
-                                SizedBox(
+                SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _submit,
@@ -164,7 +167,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             width: 20,
                             child: CircularProgressIndicator(strokeWidth: 2.4, color: AppColors.black),
                           )
-                        : const Text("S'inscrire", textAlign: TextAlign.center),
+                        : Text(loc.t('auth.register'), textAlign: TextAlign.center),
                   ),
                 ),
                 const SizedBox(height: 22),
@@ -174,13 +177,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ? null
                         : () => Navigator.of(context).pushReplacementNamed(AppRoutes.login),
                     child: RichText(
-                      text: const TextSpan(
-                        style: TextStyle(color: Colors.white54, fontSize: 13),
+                      text: TextSpan(
+                        style: const TextStyle(color: Colors.white54, fontSize: 13),
                         children: [
-                          TextSpan(text: 'Déjà un compte ? '),
+                          TextSpan(text: "${loc.t('auth.hasAccount')} "),
                           TextSpan(
-                            text: 'Se connecter',
-                            style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.w700),
+                            text: loc.t('auth.login'),
+                            style: const TextStyle(color: AppColors.gold, fontWeight: FontWeight.w700),
                           ),
                         ],
                       ),

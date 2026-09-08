@@ -29,6 +29,8 @@
   "auth.registerTitle": "Sign up",
   "auth.loginSubtitle": "Log in to reconnect with your community.",
   "auth.registerSubtitle": "Create your account and share your voice.",
+  "auth.loginGreeting": "Welcome back 👋",
+  "auth.registerGreeting": "Join the MUHETO community 🎉",
   "feed.forYou": "For You",
   "feed.following": "Following",
   "feed.trending": "Trending",

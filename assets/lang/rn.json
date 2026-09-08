@@ -29,6 +29,8 @@
   "auth.registerTitle": "Iyandikishe",
   "auth.loginSubtitle": "Injira kugira wongere uhure n'abagenzi bawe.",
   "auth.registerSubtitle": "Fungura konte yawe kandi usangire ijwi ryawe.",
+  "auth.loginGreeting": "Ni akaza wongera 👋",
+  "auth.registerGreeting": "Injira mu muryango wa MUHETO 🎉",
   "feed.forYou": "Kuri wewe",
   "feed.following": "Nkurikira",
   "feed.trending": "Bikunzwe",

@@ -29,6 +29,7 @@
   "auth.registerTitle": "Inscription",
   "auth.loginSubtitle": "Connecte-toi pour retrouver ta communauté.",
   "auth.registerSubtitle": "Crée ton compte et partage ta voix.",
+  "auth.loginGreeting": "Content de te revoir 👋",
   "feed.forYou": "Pour Toi",
   "feed.following": "Abonnements",
   "feed.trending": "Tendances",
