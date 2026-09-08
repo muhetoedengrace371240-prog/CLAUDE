@@ -8,7 +8,7 @@
 > Après chaque session qui ajoute un champ, une fonction ou une collection,
 > **mettre à jour ce fichier** avant de fermer la conversation.
 
-Dernière mise à jour : 26/08/2026
+Dernière mise à jour : 08/09/2026
 
 > **Statut de complétude** : modèles Dart (User, Business, Chat, Message, Video, Comment) ET
 > tous les services (`auth`, `business`, `chat`, `feed`, `gold`, `notification`, `profile`, `search`)
@@ -412,3 +412,22 @@ Le fichier `build.yml` utilisé par GitHub Actions est celui dans `muheto_app\.g
 **Note : Firestore ≠ Authentication**. La liste "Utilisateurs" dans `AdminScreen` lit uniquement la collection Firestore `users` — pas la liste des comptes dans Firebase Authentication. Des comptes peuvent exister dans Authentication sans fiche Firestore correspondante (inscriptions interrompues) ; ils sont invisibles dans l'outil de modération et sans danger, pas la peine de les traiter en priorité.
 
 **Compte de test `ng21`** (uid `T4XoEKeZYpSGek4djGZgA51G7Qz1`) : a été banni/débanni plusieurs fois pendant les tests du 03/09/2026 — vérifier son état actuel si besoin.
+## 10. Icône de l'app + correction du pipeline CI (ajouté le 08/09/2026)
+
+**Icône MUHETO fonctionnelle** : le logo doré MUHETO s'affiche maintenant correctement comme icône de l'app sur téléphone (testé sur Infinix HOT 40i), à la place du logo Flutter par défaut. Généré via le package `flutter_launcher_icons`, à partir de l'image `assets/images/app_icon.png`.
+
+**⚠️ Piège rencontré et corrigé : `build.yml` modifié dans le mauvais dossier**
+En ajoutant l'étape "Generate app icons" dans `build.yml`, la modification avait d'abord été faite dans le fichier du dossier racine périmé (`C:\Users\LENOVO\Downloads\CLAUDE\.github\workflows\build.yml`) au lieu du vrai fichier utilisé par GitHub (`C:\Users\LENOVO\Downloads\CLAUDE\muheto_app\.github\workflows\build.yml`) — encore une fois le piège des deux dossiers Git imbriqués (voir section 9). Résultat : l'étape n'apparaissait pas dans les logs du build, alors que le build réussissait quand même (il générait juste l'app avec l'ancienne icône Flutter).
+
+**Comment on l'a détecté** : en comparant, commande par commande dans le terminal PowerShell (`git log`, `Get-Content`), le contenu réel du fichier suivi par Git avec celui affiché dans l'onglet VS Code actif — les deux ne correspondaient pas.
+
+**Correction appliquée** : l'étape suivante a été ajoutée dans le bon `build.yml` (`muheto_app\.github\workflows\build.yml`), entre "Get dependencies" et "Build APK" :
+```yaml
+- name: Generate app icons
+  run: flutter pub run flutter_launcher_icons
+```
+Commit `0d2cf28`, poussé sur `main`. Confirmé fonctionnel sur le build GitHub Actions **#43**.
+
+**Rappel pratique pour éviter de refaire cette confusion** :
+- Adresse du dépôt GitHub (vérifiable avec `git remote -v`) : `https://github.com/muhetoedengrace371240-prog/CLAUDE.git`
+- Avant de modifier `build.yml` (ou tout fichier `.github/workflows/`), toujours vérifier dans le terminal que l'invite se termine par `...\muheto_app>`, PAS `...\CLAUDE>`, avec la commande `Get-Content .github\workflows\build.yml` pour confirmer qu'on lit bien le fichier suivi par Git avant de le modifier dans VS Code.

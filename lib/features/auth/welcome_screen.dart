@@ -34,12 +34,14 @@ class WelcomeScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const Spacer(flex: 3),
                   ShaderMask(
                     shaderCallback: (bounds) => AppColors.goldGradient.createShader(bounds),
                     child: const Text(
                       'M',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 72,
                         fontWeight: FontWeight.w900,
@@ -52,6 +54,7 @@ class WelcomeScreen extends StatelessWidget {
                     shaderCallback: (bounds) => AppColors.goldGradient.createShader(bounds),
                     child: const Text(
                       'MUHETO',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.w800,
@@ -60,24 +63,21 @@ class WelcomeScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    loc.t('app_tagline').toUpperCase(),
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 12,
-                      letterSpacing: 2.5,
+                  const Spacer(flex: 4),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.of(context).pushNamed(AppRoutes.login),
+                      child: Text(loc.t('auth.login'), textAlign: TextAlign.center),
                     ),
                   ),
-                  const Spacer(flex: 4),
-                  ElevatedButton(
-                    onPressed: () => Navigator.of(context).pushNamed(AppRoutes.login),
-                    child: Text(loc.t('auth.login')),
-                  ),
                   const SizedBox(height: 14),
-                  OutlinedButton(
-                    onPressed: () => Navigator.of(context).pushNamed(AppRoutes.register),
-                    child: Text(loc.t('auth.register')),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pushNamed(AppRoutes.register),
+                      child: Text(loc.t('auth.register'), textAlign: TextAlign.center),
+                    ),
                   ),
                   const SizedBox(height: 40),
                 ],
