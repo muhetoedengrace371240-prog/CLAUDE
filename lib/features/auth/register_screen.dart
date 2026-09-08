@@ -154,15 +154,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Text(_errorMessage!, style: const TextStyle(color: AppColors.error, fontSize: 13)),
                 ],
                 const SizedBox(height: 22),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _submit,
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2.4, color: AppColors.black),
-                        )
-                      : const Text("S'inscrire"),
+                                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _submit,
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2.4, color: AppColors.black),
+                          )
+                        : const Text("S'inscrire", textAlign: TextAlign.center),
+                  ),
                 ),
                 const SizedBox(height: 22),
                 Center(
