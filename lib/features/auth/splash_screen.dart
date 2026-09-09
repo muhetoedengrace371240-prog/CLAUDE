@@ -107,16 +107,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     ),
                   ),
                 ),
-                const SizedBox(height: 6),
-                const Text(
-                  'LA VOIX DE L\'AFRIQUE',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                    letterSpacing: 3,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
               ],
             ),
           ),

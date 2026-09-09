@@ -431,3 +431,28 @@ Commit `0d2cf28`, poussé sur `main`. Confirmé fonctionnel sur le build GitHub 
 **Rappel pratique pour éviter de refaire cette confusion** :
 - Adresse du dépôt GitHub (vérifiable avec `git remote -v`) : `https://github.com/muhetoedengrace371240-prog/CLAUDE.git`
 - Avant de modifier `build.yml` (ou tout fichier `.github/workflows/`), toujours vérifier dans le terminal que l'invite se termine par `...\muheto_app>`, PAS `...\CLAUDE>`, avec la commande `Get-Content .github\workflows\build.yml` pour confirmer qu'on lit bien le fichier suivi par Git avant de le modifier dans VS Code.
+## 11. Peaufinage UI + audit des traductions (ajouté le 08/09/2026)
+
+**Écran Bienvenue (`welcome_screen.dart`)** : suppression du slogan "LA VOIX DE L'AFRIQUE" (jugé redondant avec le nom MUHETO déjà affiché), et centrage explicite du logo et des boutons (`textAlign: TextAlign.center` + boutons en `width: double.infinity`) pour corriger un léger décalage visuel à gauche.
+
+**Boutons "Se connecter" / "S'inscrire" mal centrés** : sur `login_screen.dart` et `register_screen.dart`, les boutons `ElevatedButton` étaient dans une `Column` alignée à gauche (`crossAxisAlignment: CrossAxisAlignment.start`) et ne prenaient donc que la largeur de leur texte. Corrigé en enveloppant chaque bouton dans `SizedBox(width: double.infinity, child: ElevatedButton(...))`.
+
+**⚠️ Découverte importante : audit des traductions**
+Les 4 fichiers `assets/lang/{rn,fr,en,sw}.json` ont été vérifiés clé par clé et sont **tous complets et alignés** (60 clés chacun, aucune clé manquante). Le vrai problème n'était donc PAS des traductions manquantes, mais du **texte écrit en dur directement en français dans le code Dart**, qui ne passe jamais par `AppLocalizations` — donc ce texte reste figé en français quelle que soit la langue choisie dans les Paramètres.
+
+**Corrigé le 08/09/2026** : `login_screen.dart` et `register_screen.dart` utilisent maintenant `AppLocalizations.of(context)` (variable `loc`) pour tous les textes visibles (titre d'AppBar, message d'accueil, sous-titre, placeholders des champs, texte du bouton, lien de bas de page). Au passage, le titre de test oublié `"Connexion TEST V2"` a été remplacé par la vraie traduction (`auth.loginTitle`).
+
+**Nouvelles clés ajoutées aux 4 fichiers JSON** (juste après `auth.registerSubtitle`) :
+- `auth.loginGreeting` → "Content de te revoir 👋" (et équivalents en, sw, rn)
+- `auth.registerGreeting` → "Rejoins la communauté MUHETO 🎉" (et équivalents en, sw, rn)
+
+**Laissé volontairement en français pour l'instant** (à traduire dans une prochaine session) : les messages de validation de formulaire dans `login_screen.dart` et `register_screen.dart` (ex. "Email requis.", "Mot de passe requis.", "6 caractères minimum.", "Les mots de passe ne correspondent pas.", "Au moins 3 caractères.", etc.) et le message de `_forgotPassword()` ("Renseigne ton email pour recevoir le lien...", "Email de réinitialisation envoyé à...").
+
+**⚠️ Autres écrans identifiés avec du texte en dur, PAS ENCORE corrigés** (repérés via captures d'écran de l'app en français malgré un changement de langue) :
+- Écran **Découvrir** : "DÉCOUVRIR", "Rechercher un créateur...", "Explore par catégories", et les noms des 10 catégories (Humour, Musique, Danse, Actualité, Éducation, Business, Cuisine, Sport, Culture, Lifestyle)
+- Écran **Boîte de réception** : "BOÎTE DE RÉCEPTION", "Activité", "Messages", "Aucune activité pour le moment", "Les likes, commentaires et nouveaux abonnés apparaîtront ici."
+- Écran **Profil** : "Modifier le profil", "Abonnements", "Abonnés", "J'aime", "Passe à MUHETO Gold ✨"
+- Écran **Accueil/Feed** : "Pour Toi", "Abonnements", "Tendances", "Aucune vidéo pour le moment. Sois le premier à publier !"
+- Barre de navigation du bas : affiche "Home", "Discover", "Inbox", "Profile" (en anglais en dur, incohérent avec le reste qui était en français) — à vérifier/corriger en priorité car visible en permanence
+
+**Piste pour la prochaine session** : continuer l'audit écran par écran dans cet ordre suggéré (par fréquence d'usage) : barre de navigation du bas → Découvrir → Boîte de réception → Profil → Feed. Même méthode qu'aujourd'hui : identifier le texte en dur, vérifier/ajouter les clés JSON manquantes dans les 4 langues, remplacer par `loc.t('...')`.
