@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/chat_model.dart';
 import '../../services/chat_service.dart';
@@ -14,20 +15,22 @@ class InboxScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         backgroundColor: AppColors.black,
         appBar: AppBar(
-          title: const Text('BOÎTE DE RÉCEPTION'),
+          title: Text(loc.t('chat.inbox').toUpperCase()),
           automaticallyImplyLeading: false,
-          bottom: const TabBar(
+          bottom: TabBar(
             indicatorColor: AppColors.gold,
             labelColor: AppColors.gold,
             unselectedLabelColor: AppColors.textMuted,
             tabs: [
-              Tab(text: 'Activité'),
-              Tab(text: 'Messages'),
+              Tab(text: loc.t('chat.activity')),
+              Tab(text: loc.t('chat.messages')),
             ],
           ),
         ),
@@ -47,23 +50,25 @@ class _ActivityEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    final loc = AppLocalizations.of(context);
+
+    return Center(
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 32),
+        padding: const EdgeInsets.symmetric(horizontal: 32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.notifications_none_rounded, color: AppColors.gold, size: 48),
-            SizedBox(height: 14),
+            const Icon(Icons.notifications_none_rounded, color: AppColors.gold, size: 48),
+            const SizedBox(height: 14),
             Text(
-              'Aucune activité pour le moment',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+              loc.t('chat.noActivity'),
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
             ),
-            SizedBox(height: 6),
+            const SizedBox(height: 6),
             Text(
-              'Les likes, commentaires et nouveaux abonnés apparaîtront ici.',
+              loc.t('chat.activityHint'),
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white54, fontSize: 13),
+              style: const TextStyle(color: Colors.white54, fontSize: 13),
             ),
           ],
         ),
@@ -77,12 +82,13 @@ class _ChatListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     final chatService = ChatService();
     final currentUid = FirebaseAuth.instance.currentUser?.uid;
 
     if (currentUid == null) {
-      return const Center(
-        child: Text('Connecte-toi pour voir tes messages.', style: TextStyle(color: Colors.white70)),
+      return Center(
+        child: Text(loc.t('chat.loginRequired'), style: const TextStyle(color: Colors.white70)),
       );
     }
 
@@ -95,23 +101,23 @@ class _ChatListView extends StatelessWidget {
 
         final chats = snapshot.data ?? const [];
         if (chats.isEmpty) {
-          return const Center(
+          return Center(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 32),
+              padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.chat_bubble_outline_rounded, color: AppColors.gold, size: 48),
-                  SizedBox(height: 14),
+                  const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.gold, size: 48),
+                  const SizedBox(height: 14),
                   Text(
-                    'Aucun message pour le moment',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                    loc.t('chat.noMessages'),
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
                   ),
-                  SizedBox(height: 6),
+                  const SizedBox(height: 6),
                   Text(
-                    'Ouvre le profil d\'un créateur et tape sur l\'icône message pour démarrer une conversation.',
+                    loc.t('chat.noMessagesHint'),
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white54, fontSize: 13),
+                    style: const TextStyle(color: Colors.white54, fontSize: 13),
                   ),
                 ],
               ),

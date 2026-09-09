@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/comment_model.dart';
 import '../../models/video_model.dart';
@@ -40,12 +41,13 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   Future<void> _handleLike(VideoModel video) async {
+    final loc = AppLocalizations.of(context);
     try {
       await _feedService.toggleLike(video.id);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Connecte-toi pour aimer une vidéo.')),
+        SnackBar(content: Text(loc.t('feed.likeLoginRequired'))),
       );
     }
   }
@@ -69,6 +71,8 @@ class _FeedScreenState extends State<FeedScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+
     return Scaffold(
       backgroundColor: AppColors.black,
       body: Stack(
@@ -83,22 +87,22 @@ class _FeedScreenState extends State<FeedScreen> {
               }
 
               if (snapshot.hasError) {
-                return const Center(
+                return Center(
                   child: Text(
-                    'Impossible de charger le feed.\nVérifie ta connexion.',
+                    loc.t('feed.loadError'),
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white70),
+                    style: const TextStyle(color: Colors.white70),
                   ),
                 );
               }
 
               final videos = snapshot.data ?? const [];
               if (videos.isEmpty) {
-                return const Center(
+                return Center(
                   child: Text(
-                    'Aucune vidéo pour le moment.\nSois le premier à publier !',
+                    loc.t('feed.empty'),
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white70),
+                    style: const TextStyle(color: Colors.white70),
                   ),
                 );
               }
@@ -137,7 +141,7 @@ class _FeedScreenState extends State<FeedScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            _tabLabel(tab),
+                            _tabLabel(loc, tab),
                             style: TextStyle(
                               color: isSelected ? Colors.white : Colors.white60,
                               fontSize: 15,
@@ -167,14 +171,14 @@ class _FeedScreenState extends State<FeedScreen> {
     );
   }
 
-  String _tabLabel(FeedTab tab) {
+  String _tabLabel(AppLocalizations loc, FeedTab tab) {
     switch (tab) {
       case FeedTab.pourToi:
-        return 'Pour Toi';
+        return loc.t('feed.forYou');
       case FeedTab.abonnements:
-        return 'Abonnements';
+        return loc.t('feed.following');
       case FeedTab.tendances:
-        return 'Tendances';
+        return loc.t('feed.trending');
     }
   }
 }
@@ -294,6 +298,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
   }
 
   Future<void> _send() async {
+    final loc = AppLocalizations.of(context);
     final text = _textController.text.trim();
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (text.isEmpty || uid == null || _isSending) return;
@@ -307,7 +312,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
       final comment = CommentModel(
         id: '',
         userId: uid,
-        username: author?.username ?? 'Utilisateur MUHETO',
+        username: author?.username ?? loc.t('feed.defaultUsername'),
         avatarUrl: author?.avatarUrl ?? '',
         isGoldMember: author?.isGoldActive ?? false,
         text: text,
@@ -319,7 +324,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Le commentaire n'a pas pu être publié.")),
+        SnackBar(content: Text(loc.t('feed.commentFailed'))),
       );
     } finally {
       if (mounted) setState(() => _isSending = false);
@@ -328,6 +333,8 @@ class _CommentsSheetState extends State<_CommentsSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+
     return DraggableScrollableSheet(
       initialChildSize: 0.6,
       minChildSize: 0.4,
@@ -338,7 +345,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
           children: [
             const SizedBox(height: 12),
             Text(
-              '${widget.video.commentsCount} commentaires',
+              '${widget.video.commentsCount} ${loc.t('feed.commentsLabel')}',
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w700,
@@ -352,10 +359,10 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                 builder: (context, snapshot) {
                   final comments = snapshot.data ?? const [];
                   if (comments.isEmpty) {
-                    return const Center(
+                    return Center(
                       child: Text(
-                        'Sois le premier à commenter.',
-                        style: TextStyle(color: Colors.white54),
+                        loc.t('feed.beFirstComment'),
+                        style: const TextStyle(color: Colors.white54),
                       ),
                     );
                   }
@@ -406,8 +413,8 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                       child: TextField(
                         controller: _textController,
                         style: const TextStyle(color: Colors.white),
-                        decoration: const InputDecoration(
-                          hintText: 'Ajoute un commentaire...',
+                        decoration: InputDecoration(
+                          hintText: loc.t('feed.addCommentHint'),
                           isDense: true,
                         ),
                         onSubmitted: (_) => _send(),

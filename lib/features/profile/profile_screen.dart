@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/localization/app_localizations.dart';
 import '../../core/navigation/app_routes.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/user_model.dart';
@@ -54,15 +55,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     final uid = _viewedUid;
 
     if (uid == null) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: AppColors.black,
         body: Center(
           child: Text(
-            'Connecte-toi pour voir ton profil.',
-            style: TextStyle(color: Colors.white70),
+            loc.t('profile.loginRequired'),
+            style: const TextStyle(color: Colors.white70),
           ),
         ),
       );
@@ -73,7 +75,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(
         title: StreamBuilder<UserModel?>(
           stream: _profileService.watchUser(uid),
-          builder: (context, snap) => Text(snap.data?.username ?? 'Profil'),
+          builder: (context, snap) => Text(snap.data?.username ?? loc.t('profile.title')),
         ),
         automaticallyImplyLeading: !_isOwnProfile,
         actions: [
@@ -95,8 +97,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           final user = userSnap.data;
           if (user == null) {
-            return const Center(
-              child: Text('Utilisateur introuvable.', style: TextStyle(color: Colors.white70)),
+            return Center(
+              child: Text(loc.t('profile.userNotFound'), style: const TextStyle(color: Colors.white70)),
             );
           }
 
@@ -153,6 +155,8 @@ class _ProfileBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+
     return StreamBuilder<List<VideoModel>>(
       stream: profileService.watchUserVideos(uid),
       builder: (context, videosSnap) {
@@ -220,9 +224,9 @@ class _ProfileBody extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                ProfileStat(value: user.followingCount, label: 'Abonnements'),
-                ProfileStat(value: user.followersCount, label: 'Abonnés'),
-                ProfileStat(value: totalLikes, label: "J'aime"),
+                ProfileStat(value: user.followingCount, label: loc.t('profile.following')),
+                ProfileStat(value: user.followersCount, label: loc.t('profile.followers')),
+                ProfileStat(value: totalLikes, label: loc.t('profile.likes')),
               ],
             ),
             const SizedBox(height: 18),
@@ -236,7 +240,7 @@ class _ProfileBody extends StatelessWidget {
                           MaterialPageRoute(builder: (_) => EditProfileScreen(user: user)),
                         );
                       },
-                      child: const Text('Modifier le profil'),
+                      child: Text(loc.t('profile.editProfile')),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -261,11 +265,11 @@ class _ProfileBody extends StatelessWidget {
                         return isFollowing
                             ? OutlinedButton(
                                 onPressed: onFollowTap,
-                                child: const Text('Abonné'),
+                                child: Text(loc.t('profile.followingAction')),
                               )
                             : ElevatedButton(
                                 onPressed: onFollowTap,
-                                child: const Text('Suivre'),
+                                child: Text(loc.t('profile.follow')),
                               );
                       },
                     ),
@@ -320,23 +324,25 @@ class _VideosGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+
     if (isLoading) {
       return const Center(child: CircularProgressIndicator(color: AppColors.gold));
     }
 
     if (videos.isEmpty) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 32),
+          padding: const EdgeInsets.symmetric(horizontal: 32),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.videocam_off_outlined, color: AppColors.textMuted, size: 36),
-              SizedBox(height: 10),
+              const Icon(Icons.videocam_off_outlined, color: AppColors.textMuted, size: 36),
+              const SizedBox(height: 10),
               Text(
-                'Aucune vidéo publiée pour le moment.',
+                loc.t('profile.noVideos'),
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white54, fontSize: 13),
+                style: const TextStyle(color: Colors.white54, fontSize: 13),
               ),
             ],
           ),
@@ -412,6 +418,8 @@ class _GoldEntryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+
     return GestureDetector(
       onTap: () => Navigator.of(context).pushNamed(AppRoutes.gold),
       child: Container(
@@ -432,7 +440,7 @@ class _GoldEntryCard extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                isGoldActive ? 'Tu es membre MUHETO Gold ✨' : 'Passe à MUHETO Gold ✨',
+                isGoldActive ? loc.t('profile.goldMemberBadge') : loc.t('profile.goldUpsellBadge'),
                 style: TextStyle(
                   color: isGoldActive ? AppColors.black : Colors.white,
                   fontWeight: FontWeight.w700,
