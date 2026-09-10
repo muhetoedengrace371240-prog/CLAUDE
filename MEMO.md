@@ -8,7 +8,7 @@
 > Après chaque session qui ajoute un champ, une fonction ou une collection,
 > **mettre à jour ce fichier** avant de fermer la conversation.
 
-Dernière mise à jour : 08/09/2026
+Dernière mise à jour : 09/09/2026
 
 > **Statut de complétude** : modèles Dart (User, Business, Chat, Message, Video, Comment) ET
 > tous les services (`auth`, `business`, `chat`, `feed`, `gold`, `notification`, `profile`, `search`)
@@ -456,3 +456,28 @@ Les 4 fichiers `assets/lang/{rn,fr,en,sw}.json` ont été vérifiés clé par cl
 - Barre de navigation du bas : affiche "Home", "Discover", "Inbox", "Profile" (en anglais en dur, incohérent avec le reste qui était en français) — à vérifier/corriger en priorité car visible en permanence
 
 **Piste pour la prochaine session** : continuer l'audit écran par écran dans cet ordre suggéré (par fréquence d'usage) : barre de navigation du bas → Découvrir → Boîte de réception → Profil → Feed. Même méthode qu'aujourd'hui : identifier le texte en dur, vérifier/ajouter les clés JSON manquantes dans les 4 langues, remplacer par `loc.t('...')`.
+## 12. Audit des traductions — COMPLET (ajouté le 09/09/2026)
+
+**Statut : tous les écrans identifiés dans l'audit de la section 11 sont maintenant corrigés et fonctionnels dans les 4 langues.**
+
+Écrans corrigés le 09/09/2026 (en plus de `login_screen.dart`/`register_screen.dart`, `welcome_screen.dart` et `splash_screen.dart` déjà faits le 08/09/2026) :
+
+- **`discover_screen.dart`** : titre, barre de recherche, "Explore par catégories", et les 10 catégories (Humour, Musique, Danse, Actualité, Éducation, Business, Cuisine, Sport, Culture, Lifestyle). ⚠️ Changement de structure important : les catégories sont maintenant stockées comme `(clé_stable, icône)` au lieu de `(texte_affiché, icône)` — la logique de navigation (ex. ouvrir la Page Business en tapant sur "Business") utilise la clé stable (`category.business`), jamais le texte traduit. Repartir de ce même principe pour toute future liste de catégories/options.
+- **`inbox_screen.dart`** : titre, onglets Activité/Messages, états vides (aucune activité, aucun message), message de connexion requise.
+- **`profile_screen.dart`** : message de connexion requise, "Utilisateur introuvable", les 3 stats, "Modifier le profil"/"Suivre"/"Abonné", "Aucune vidéo publiée", et les 2 textes de la carte MUHETO Gold (membre actif / upsell).
+- **`feed_screen.dart`** : message de like sans connexion, erreur de chargement, feed vide, les 3 onglets (Pour Toi/Abonnements/Tendances), compteur et état vide des commentaires, message d'échec d'envoi de commentaire, placeholder de saisie, nom d'utilisateur par défaut.
+
+**Fichier vérifié et confirmé déjà correct, sans besoin de modification** : `lib/features/navigation/widgets/muheto_bottom_navbar.dart` — la barre de navigation du bas utilisait déjà `loc.t('nav.home')`, `loc.t('nav.discover')`, `loc.t('nav.inbox')`, `loc.t('nav.profile')` correctement. Ce qui donnait l'impression d'un bug ("Home/Discover/Inbox/Profile" affichés en anglais) était en fait la langue de l'app réglée sur l'anglais à ce moment précis — comportement normal, pas un bug.
+
+**Nombre total de nouvelles clés ajoutées aux 4 fichiers JSON aujourd'hui** : 12 (`discover.*` + `category.*`) + 4 (`chat.*`) + 5 (`profile.*`) + 8 (`feed.*`) = **29 nouvelles clés**, toutes vérifiées présentes et alignées dans `fr.json`, `en.json`, `sw.json`, `rn.json`.
+
+**⚠️ Point de vigilance qui subsiste** : les messages de validation de formulaire (erreurs de saisie type "Email requis.", "6 caractères minimum.") dans `login_screen.dart`/`register_screen.dart`, ainsi que quelques messages d'erreur ponctuels ailleurs dans le code (ex. dans `_forgotPassword()`), sont probablement encore en dur en français quelque part dans l'app — pas vérifiés exhaustivement. À auditer si on veut une couverture 100% complète, mais non prioritaire (impact visuel mineur, ce sont des messages d'erreur ponctuels plutôt que du texte affiché en permanence).
+
+**Traduction Kirundi (`rn.json`)** : toutes les nouvelles clés ajoutées aujourd'hui ont été traduites du mieux possible mais n'ont pas été relues par un locuteur natif — comme déjà noté pour les CGU, à faire vérifier avant un vrai lancement public.
+
+**Méthode qui a bien fonctionné aujourd'hui, à reproduire pour tout futur écran** :
+1. Ouvrir le fichier `.dart` de l'écran, repérer chaque `Text('...')` ou `hintText: '...'` écrit en dur
+2. Proposer les nouvelles clés à ajouter aux 4 fichiers JSON (toujours vérifier si une clé similaire n'existe pas déjà avant d'en créer une nouvelle)
+3. Ajouter ces clés dans les 4 fichiers, un par un, avec vérification de chacun avant de continuer
+4. Réécrire le fichier `.dart` en remplaçant chaque texte en dur par `loc.t('...')`, avec `final loc = AppLocalizations.of(context);` en tête de chaque `build()` qui en a besoin
+5. Vérifier le fichier complet avant sauvegarde (attention particulière aux accolades qui s'équilibrent, surtout après un copier-coller partiel)

@@ -92,10 +92,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   validator: (value) {
                     if (value == null || value.trim().length < 3) {
-                      return 'Au moins 3 caractères.';
+                      return loc.t('auth.usernameMinLength');
                     }
                     if (!RegExp(r'^[a-zA-Z0-9._]+$').hasMatch(value.trim())) {
-                      return 'Lettres, chiffres, points et underscores uniquement.';
+                      return loc.t('auth.usernameInvalidChars');
                     }
                     return null;
                   },
@@ -110,8 +110,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     prefixIcon: const Icon(Icons.email_outlined, color: AppColors.gold),
                   ),
                   validator: (value) {
-                    if (value == null || value.trim().isEmpty) return 'Email requis.';
-                    if (!value.contains('@')) return 'Email invalide.';
+                    if (value == null || value.trim().isEmpty) return loc.t('auth.emailRequired');
+                    if (!value.contains('@')) return loc.t('auth.emailInvalid');
                     return null;
                   },
                 ),
@@ -132,7 +132,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ),
                   validator: (value) {
-                    if (value == null || value.length < 6) return '6 caractères minimum.';
+                    if (value == null || value.length < 6) return loc.t('auth.passwordMinLength');
                     return null;
                   },
                 ),
@@ -147,7 +147,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   validator: (value) {
                     if (value != _passwordController.text) {
-                      return 'Les mots de passe ne correspondent pas.';
+                      return loc.t('auth.passwordMismatch');
                     }
                     return null;
                   },

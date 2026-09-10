@@ -69,16 +69,17 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _forgotPassword() async {
+    final loc = AppLocalizations.of(context);
     final email = _emailController.text.trim();
     if (email.isEmpty) {
-      setState(() => _errorMessage = 'Renseigne ton email pour recevoir le lien de réinitialisation.');
+      setState(() => _errorMessage = loc.t('auth.forgotPasswordEmailNeeded'));
       return;
     }
     try {
       await _authService.sendPasswordResetEmail(email);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Email de réinitialisation envoyé à $email.')),
+        SnackBar(content: Text(loc.t('auth.resetEmailSent').replaceFirst('{email}', email))),
       );
     } catch (e) {
       if (!mounted) return;
@@ -120,8 +121,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     prefixIcon: const Icon(Icons.email_outlined, color: AppColors.gold),
                   ),
                   validator: (value) {
-                    if (value == null || value.trim().isEmpty) return 'Email requis.';
-                    if (!value.contains('@')) return 'Email invalide.';
+                    if (value == null || value.trim().isEmpty) return loc.t('auth.emailRequired');
+                    if (!value.contains('@')) return loc.t('auth.emailInvalid');
                     return null;
                   },
                 ),
@@ -142,7 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Mot de passe requis.';
+                    if (value == null || value.isEmpty) return loc.t('auth.passwordRequired');
                     return null;
                   },
                 ),
