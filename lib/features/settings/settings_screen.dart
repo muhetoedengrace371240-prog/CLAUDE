@@ -114,7 +114,7 @@ class SettingsScreen extends StatelessWidget {
       } catch (e) {
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AuthService().friendlyErrorMessage(e))),
+                    SnackBar(content: Text(AuthService().friendlyErrorMessage(e, loc.t))),
         );
       }
     }
