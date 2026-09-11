@@ -34,7 +34,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  Future<void> _submit() async {
+    Future<void> _submit() async {
+    final loc = AppLocalizations.of(context);
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -52,7 +53,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
     } catch (e) {
       if (!mounted) return;
-      setState(() => _errorMessage = _authService.friendlyErrorMessage(e));
+      setState(() => _errorMessage = _authService.friendlyErrorMessage(e, loc.t));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

@@ -104,31 +104,32 @@ class AuthService {
     await user.delete();
   }
 
-  /// Transforme les codes d'erreur Firebase en messages compréhensibles
-  /// pour l'utilisateur, en français.
-  String friendlyErrorMessage(Object error) {
+    /// Transforme les codes d'erreur Firebase en messages compréhensibles
+  /// pour l'utilisateur, dans la langue passée en paramètre par l'écran
+  /// appelant (ex: loc.t('errors.wrongPassword')).
+  String friendlyErrorMessage(Object error, String Function(String) t) {
     if (error is FirebaseAuthException) {
       switch (error.code) {
         case 'user-not-found':
-          return 'Aucun compte ne correspond à cette adresse email.';
+          return t('errors.userNotFound');
         case 'wrong-password':
         case 'invalid-credential':
-          return 'Email ou mot de passe incorrect.';
+          return t('errors.wrongPassword');
         case 'email-already-in-use':
-          return 'Un compte existe déjà avec cette adresse email.';
+          return t('errors.emailInUse');
         case 'invalid-email':
-          return 'Adresse email invalide.';
+          return t('errors.invalidEmail');
         case 'weak-password':
-          return 'Mot de passe trop faible (6 caractères minimum).';
+          return t('errors.weakPassword');
         case 'network-request-failed':
-          return 'Problème de connexion. Vérifie ton réseau.';
+          return t('errors.networkError');
         case 'too-many-requests':
-          return 'Trop de tentatives. Réessaie dans quelques instants.';
+          return t('errors.tooManyRequests');
         default:
-          return 'Une erreur est survenue. Réessaie.';
+          return t('errors.generic');
       }
     }
     if (error is StateError) return error.message;
-    return 'Une erreur est survenue. Réessaie.';
+    return t('errors.generic');
   }
 }

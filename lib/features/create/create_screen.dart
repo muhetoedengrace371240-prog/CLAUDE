@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../services/profile_service.dart';
 import 'camera_capture_screen.dart';
@@ -70,6 +71,8 @@ class _CreateScreenState extends State<CreateScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+
     return Scaffold(
       backgroundColor: AppColors.black,
       appBar: AppBar(
@@ -77,7 +80,7 @@ class _CreateScreenState extends State<CreateScreen> {
           icon: const Icon(Icons.close_rounded, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('Créer'),
+        title: Text(loc.t('nav.create')),
       ),
       body: Center(
         child: Padding(
@@ -95,19 +98,19 @@ class _CreateScreenState extends State<CreateScreen> {
                 child: const Icon(Icons.videocam_rounded, color: AppColors.black, size: 38),
               ),
               const SizedBox(height: 20),
-              const Text(
-                'Filme ou importe ta vidéo',
-                style: TextStyle(
+              Text(
+                loc.t('create.subtitle'),
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Vidéo verticale recommandée, 60 secondes maximum en version standard.',
+              Text(
+                loc.t('create.hint'),
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white54, fontSize: 13),
+                style: const TextStyle(color: Colors.white54, fontSize: 13),
               ),
               const SizedBox(height: 28),
               Row(
@@ -122,7 +125,7 @@ class _CreateScreenState extends State<CreateScreen> {
                               child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.gold),
                             )
                           : const Icon(Icons.camera_alt_outlined),
-                      label: const Text('Caméra'),
+                      label: Text(loc.t('create.camera')),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -139,7 +142,7 @@ class _CreateScreenState extends State<CreateScreen> {
                               ),
                             )
                           : const Icon(Icons.photo_library_outlined),
-                      label: const Text('Galerie'),
+                      label: Text(loc.t('create.gallery')),
                     ),
                   ),
                 ],

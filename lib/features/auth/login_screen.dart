@@ -34,6 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _submit() async {
+    final loc = AppLocalizations.of(context);
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -62,7 +63,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      setState(() => _errorMessage = _authService.friendlyErrorMessage(e));
+            setState(() => _errorMessage = _authService.friendlyErrorMessage(e, loc.t));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -83,7 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      setState(() => _errorMessage = _authService.friendlyErrorMessage(e));
+            setState(() => _errorMessage = _authService.friendlyErrorMessage(e, loc.t));
     }
   }
 
