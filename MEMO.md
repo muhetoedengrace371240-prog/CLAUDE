@@ -8,7 +8,7 @@
 > Après chaque session qui ajoute un champ, une fonction ou une collection,
 > **mettre à jour ce fichier** avant de fermer la conversation.
 
-Dernière mise à jour : 09/09/2026
+Dernière mise à jour : 11/09/2026
 
 > **Statut de complétude** : modèles Dart (User, Business, Chat, Message, Video, Comment) ET
 > tous les services (`auth`, `business`, `chat`, `feed`, `gold`, `notification`, `profile`, `search`)
@@ -481,3 +481,19 @@ Les 4 fichiers `assets/lang/{rn,fr,en,sw}.json` ont été vérifiés clé par cl
 3. Ajouter ces clés dans les 4 fichiers, un par un, avec vérification de chacun avant de continuer
 4. Réécrire le fichier `.dart` en remplaçant chaque texte en dur par `loc.t('...')`, avec `final loc = AppLocalizations.of(context);` en tête de chaque `build()` qui en a besoin
 5. Vérifier le fichier complet avant sauvegarde (attention particulière aux accolades qui s'équilibrent, surtout après un copier-coller partiel)
+## 13. Fin du chantier traductions : messages Firebase + écran Créer (ajouté le 11/09/2026)
+
+**Écrans/fonctions corrigés aujourd'hui** :
+- `login_screen.dart` / `register_screen.dart` : tous les messages de validation de formulaire restants (email requis/invalide, mot de passe requis/trop court, pseudonyme invalide, mots de passe différents) et les messages de `_forgotPassword()` (email requis, confirmation d'envoi) — 9 nouvelles clés `auth.*`.
+- `auth_service.dart` : la fonction `friendlyErrorMessage()` retournait ses messages ("Email ou mot de passe incorrect.", "Aucun compte...", etc.) toujours en français, quelle que soit la langue de l'app — un bug distinct de l'audit initial, jamais repéré avant. **Changement de signature** : la fonction prend maintenant un 2e paramètre `String Function(String) t` (le `loc.t` de l'écran appelant), puisqu'un service n'a pas accès à `context`/`AppLocalizations` directement. 8 nouvelles clés `errors.*`.
+- `create_screen.dart` (écran "+" caméra/galerie) : titre, sous-titre, indication de durée, boutons Caméra/Galerie — jamais audité jusque-là. 4 nouvelles clés `create.*`.
+
+**⚠️ Incident du jour : build GitHub Actions #50 en échec**
+En changeant la signature de `friendlyErrorMessage()` (ajout du paramètre `t`), un appel existant dans `settings_screen.dart` (méthode `_confirmDeleteAccount`, catch de `deleteAccount()`) n'a pas été mis à jour — il ne nous était pas venu à l'esprit que ce fichier appelait aussi cette fonction. Résultat : `flutter build apk` a échoué avec `error: 1 positional argument expected, 2 required, 1 given` (ligne 19 environ, "Target kernel_snapshot_program failed"), build rouge en ~4 minutes au lieu de ~7 minutes (durée de build anormalement courte = bon indice qu'il s'agit d'une erreur de compilation précoce, pas d'un vrai souci runtime).
+- **Détection** : lire le log d'erreur du job "Build APK" sur GitHub Actions → cherche `error:` en rouge, indique le fichier/la ligne fautive de façon assez claire.
+- **Diagnostic confirmé** : recherche globale VS Code (`Ctrl+Shift+F`) sur `friendlyErrorMessage` dans tout le projet — a révélé un appel à un seul argument oublié dans `settings_screen.dart`, en plus de nombreux faux-positifs dans d'anciens dossiers de sauvegarde (`muheto_flutter_briqueX`, `muheto_app_SAUVEGARDE...`) qu'il faut ignorer, ne pas y toucher.
+- **Correction** : ligne mise à jour pour passer `loc.t` en 2e argument. Commit `1e3fbda`, build #51 ✅ vert.
+
+**Leçon pour la suite** : quand on change la signature d'une fonction partagée (service appelé depuis plusieurs écrans), toujours faire une recherche globale (`Ctrl+Shift+F`) du nom de la fonction dans **tout le projet** avant d'envoyer sur GitHub — pas seulement relire les fichiers qu'on pense avoir modifiés. Ça aurait évité ce build cassé.
+
+**État du chantier traductions au 11/09/2026** : considéré **complet** pour tous les écrans et messages identifiés à ce jour (Bienvenue, Connexion, Inscription, Splash, Découvrir, Boîte de réception, Profil, Feed, Créer, messages d'erreur Firebase). Reste non traduit, mineur : le titre "Modération" dans `settings_screen.dart` (visible seulement par les comptes admin).

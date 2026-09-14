@@ -2,6 +2,7 @@ import 'package:muheto_app/features/search/widgets/search_tab_selector.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/business_model.dart';
 import '../../services/business_service.dart';
@@ -27,10 +28,11 @@ class _BusinessScreenState extends State<BusinessScreen> {
   bool _isOpeningForm = false;
 
   Future<void> _handleMyPageTap() async {
+    final loc = AppLocalizations.of(context);
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Connecte-toi pour créer ta page Business.')),
+        SnackBar(content: Text(loc.t('business.loginRequired'))),
       );
       return;
     }
@@ -49,10 +51,12 @@ class _BusinessScreenState extends State<BusinessScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+
     return Scaffold(
       backgroundColor: AppColors.black,
       appBar: AppBar(
-        title: const Text('BUSINESS LOCAL'),
+        title: Text(loc.t('business.title').toUpperCase()),
         actions: [
           IconButton(
             icon: const Icon(Icons.search_rounded, color: Colors.white),
@@ -73,6 +77,7 @@ class _BusinessScreenState extends State<BusinessScreen> {
             categories: kBusinessCategories,
             selected: _selectedCategory,
             onSelected: (category) => setState(() => _selectedCategory = category),
+            labelBuilder: (category) => loc.t(businessCategoryKey(category)),
           ),
           const SizedBox(height: 10),
           Expanded(
@@ -121,7 +126,7 @@ class _BusinessScreenState extends State<BusinessScreen> {
                 child: CircularProgressIndicator(strokeWidth: 2.2, color: AppColors.black),
               )
             : const Icon(Icons.add_business_rounded),
-        label: const Text('Ma page', style: TextStyle(fontWeight: FontWeight.w700)),
+        label: Text(loc.t('business.myPage'), style: const TextStyle(fontWeight: FontWeight.w700)),
       ),
     );
   }
@@ -132,24 +137,26 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    final loc = AppLocalizations.of(context);
+
+    return Center(
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 32),
+        padding: const EdgeInsets.symmetric(horizontal: 32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.storefront_outlined, color: AppColors.textMuted, size: 44),
-            SizedBox(height: 14),
+            const Icon(Icons.storefront_outlined, color: AppColors.textMuted, size: 44),
+            const SizedBox(height: 14),
             Text(
-              'Aucun commerce dans cette catégorie pour le moment',
+              loc.t('business.emptyCategory'),
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
             ),
-            SizedBox(height: 6),
+            const SizedBox(height: 6),
             Text(
-              'Reviens bientôt, de nouveaux partenaires locaux arrivent chaque semaine.',
+              loc.t('business.emptyCategoryHint'),
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white54, fontSize: 13),
+              style: const TextStyle(color: Colors.white54, fontSize: 13),
             ),
           ],
         ),

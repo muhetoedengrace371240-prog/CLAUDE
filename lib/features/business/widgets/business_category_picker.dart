@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/business_model.dart';
 
@@ -18,6 +19,8 @@ class BusinessCategoryPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+
     return Wrap(
       spacing: 8,
       runSpacing: 8,
@@ -37,7 +40,7 @@ class BusinessCategoryPicker extends StatelessWidget {
               ),
             ),
             child: Text(
-              category,
+              loc.t(businessCategoryKey(category)),
               style: TextStyle(
                 color: isSelected ? AppColors.black : Colors.white70,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,

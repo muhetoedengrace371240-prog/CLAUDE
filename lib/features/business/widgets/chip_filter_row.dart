@@ -1,24 +1,32 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 
 /// Rangée horizontale scrollable de chips de filtre, avec une option
 /// "Tous" toujours en premier (représentée par une sélection `null`).
 /// Générique — réutilisable pour n'importe quelle liste de catégories.
+///
+/// [labelBuilder] permet de transformer une valeur stockée (ex: "Restaurant")
+/// en texte affiché traduit. Si omis, la valeur brute est affichée telle
+/// quelle (comportement d'origine, utile pour des listes déjà traduites).
 class ChipFilterRow extends StatelessWidget {
   const ChipFilterRow({
     super.key,
     required this.categories,
     required this.selected,
     required this.onSelected,
+    this.labelBuilder,
   });
 
   final List<String> categories;
   final String? selected;
   final ValueChanged<String?> onSelected;
+  final String Function(String category)? labelBuilder;
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     final allOptions = <String?>[null, ...categories];
 
     return SizedBox(
@@ -31,7 +39,9 @@ class ChipFilterRow extends StatelessWidget {
         itemBuilder: (context, index) {
           final option = allOptions[index];
           final isSelected = option == selected;
-          final label = option ?? 'Tous';
+          final label = option == null
+              ? loc.t('common.all')
+              : (labelBuilder?.call(option) ?? option);
 
           return GestureDetector(
             onTap: () => onSelected(option),

@@ -14,6 +14,27 @@ const kBusinessCategories = [
   'Autre',
 ];
 
+/// Correspondance entre une valeur stockée dans `kBusinessCategories`
+/// (jamais modifiée, car enregistrée telle quelle dans Firestore) et sa
+/// clé de traduction pour l'affichage. Utiliser `loc.t(businessCategoryKey(c))`
+/// partout où une catégorie est affichée à l'écran — ne jamais afficher
+/// la valeur brute directement.
+String businessCategoryKey(String storedCategory) {
+  const mapping = {
+    'Restaurant': 'businessCategory.restaurant',
+    'Boutique': 'businessCategory.shop',
+    'Beauté & Bien-être': 'businessCategory.beauty',
+    'Santé': 'businessCategory.health',
+    'Éducation': 'businessCategory.education',
+    'Technologie': 'businessCategory.technology',
+    'Hôtellerie': 'businessCategory.hospitality',
+    'Artisanat': 'businessCategory.crafts',
+    'Services': 'businessCategory.services',
+    'Autre': 'businessCategory.other',
+  };
+  return mapping[storedCategory] ?? 'businessCategory.other';
+}
+
 /// Jours de la semaine en français, dans l'ordre utilisé pour les horaires
 /// (index 0 = Lundi, comme `DateTime.weekday` où 1 = Monday).
 const kWeekDaysFr = [
