@@ -20,15 +20,17 @@ class PublishProgress {
   final double progress;
 }
 
-/// Gère tout le pipeline de publication d'une vidéo :
-/// 1. Génère une miniature (thumbnail) locale à partir du fichier vidéo.
-/// 2. Upload la vidéo brute vers Firebase Storage.
-/// 3. Upload la miniature vers Firebase Storage.
-/// 4. Écrit le document correspondant dans Firestore (`videos/{videoId}`).
+/// Gère tout le pipeline de publication de contenu (vidéo, photo, document,
+/// texte) :
+/// 1. Génère une miniature locale si pertinent.
+/// 2. Upload le(s) fichier(s) vers Firebase Storage.
+/// 3. Écrit le document correspondant dans Firestore (`videos/{postId}`).
 ///
 /// Storage paths utilisés :
 ///   videos/{uid}/{videoId}.mp4
 ///   thumbnails/{uid}/{videoId}.jpg
+///   photos/{uid}/{postId}_{index}.jpg
+///   documents/{uid}/{postId}.{extension}
 class UploadService {
   UploadService({
     FirebaseStorage? storage,
@@ -137,6 +139,206 @@ class UploadService {
 
     onProgress?.call(const PublishProgress(PublishStage.savingPost, 1));
     return videoId;
+  }
+
+  /// Publie un post photo (une ou plusieurs images) de bout en bout.
+  /// Réutilise `PublishStage.uploadingVideo` pour l'étape d'upload du
+  /// contenu principal (nom historique, mais générique dans les faits —
+  /// voir le commentaire sur la classe).
+  Future<String> publishPhoto({
+    required List<File> photoFiles,
+    required String caption,
+    required List<String> hashtags,
+    required String category,
+    required ContentScope scope,
+    required String language,
+    bool isBusinessPost = false,
+    void Function(PublishProgress progress)? onProgress,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw StateError('Tu dois être connecté pour publier.');
+    }
+    if (photoFiles.isEmpty) {
+      throw StateError('Aucune photo sélectionnée.');
+    }
+
+    final postId = _db.collection('videos').doc().id;
+    final uid = user.uid;
+
+    onProgress?.call(const PublishProgress(PublishStage.uploadingVideo, 0));
+    final photoUrls = <String>[];
+    for (var i = 0; i < photoFiles.length; i++) {
+      final ref = _storage.ref('photos/$uid/${postId}_$i.jpg');
+      await ref.putFile(photoFiles[i], SettableMetadata(contentType: 'image/jpeg'));
+      photoUrls.add(await ref.getDownloadURL());
+      onProgress?.call(PublishProgress(PublishStage.uploadingVideo, (i + 1) / photoFiles.length));
+    }
+
+    onProgress?.call(const PublishProgress(PublishStage.savingPost, 0));
+    final userDoc = await _db.collection('users').doc(uid).get();
+    final userData = userDoc.data() ?? <String, dynamic>{};
+
+    final normalizedHashtags = hashtags.map((tag) => tag.toLowerCase()).toList();
+    final trimmedCaption = caption.trim();
+    final keywords = buildSearchKeywords(trimmedCaption, extra: normalizedHashtags);
+
+    final post = VideoModel(
+      id: postId,
+      userId: uid,
+      username: userData['username'] as String? ?? user.displayName ?? 'Utilisateur',
+      userAvatarUrl: userData['avatarUrl'] as String? ?? '',
+      isVerified: userData['isVerified'] as bool? ?? false,
+      postType: PostType.photo,
+      photoUrls: photoUrls,
+      thumbnailUrl: photoUrls.first,
+      caption: trimmedCaption,
+      hashtags: normalizedHashtags,
+      musicName: '',
+      category: category,
+      scope: scope,
+      language: language,
+      likesCount: 0,
+      commentsCount: 0,
+      sharesCount: 0,
+      viewsCount: 0,
+      createdAt: null,
+      isBusinessPost: isBusinessPost,
+      searchKeywords: keywords,
+    );
+
+    await _db.collection('videos').doc(postId).set(post.toFirestore());
+    onProgress?.call(const PublishProgress(PublishStage.savingPost, 1));
+    return postId;
+  }
+
+  /// Publie un post document (PDF ou autre fichier) de bout en bout.
+  Future<String> publishDocument({
+    required File documentFile,
+    required String documentName,
+    required String caption,
+    required List<String> hashtags,
+    required String category,
+    required ContentScope scope,
+    required String language,
+    bool isBusinessPost = false,
+    void Function(PublishProgress progress)? onProgress,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw StateError('Tu dois être connecté pour publier.');
+    }
+
+    final postId = _db.collection('videos').doc().id;
+    final uid = user.uid;
+    final extension = documentFile.path.contains('.')
+        ? documentFile.path.split('.').last.toLowerCase()
+        : 'pdf';
+
+    onProgress?.call(const PublishProgress(PublishStage.uploadingVideo, 0));
+    final ref = _storage.ref('documents/$uid/$postId.$extension');
+    final uploadTask = ref.putFile(
+      documentFile,
+      SettableMetadata(contentType: 'application/octet-stream'),
+    );
+    uploadTask.snapshotEvents.listen((snapshot) {
+      final total = snapshot.totalBytes;
+      final progress = total > 0 ? snapshot.bytesTransferred / total : 0.0;
+      onProgress?.call(PublishProgress(PublishStage.uploadingVideo, progress));
+    });
+    await uploadTask;
+    final documentUrl = await ref.getDownloadURL();
+
+    onProgress?.call(const PublishProgress(PublishStage.savingPost, 0));
+    final userDoc = await _db.collection('users').doc(uid).get();
+    final userData = userDoc.data() ?? <String, dynamic>{};
+
+    final normalizedHashtags = hashtags.map((tag) => tag.toLowerCase()).toList();
+    final trimmedCaption = caption.trim();
+    final keywords = buildSearchKeywords(trimmedCaption, extra: normalizedHashtags);
+
+    final post = VideoModel(
+      id: postId,
+      userId: uid,
+      username: userData['username'] as String? ?? user.displayName ?? 'Utilisateur',
+      userAvatarUrl: userData['avatarUrl'] as String? ?? '',
+      isVerified: userData['isVerified'] as bool? ?? false,
+      postType: PostType.document,
+      documentUrl: documentUrl,
+      documentName: documentName,
+      documentType: extension,
+      caption: trimmedCaption,
+      hashtags: normalizedHashtags,
+      musicName: '',
+      category: category,
+      scope: scope,
+      language: language,
+      likesCount: 0,
+      commentsCount: 0,
+      sharesCount: 0,
+      viewsCount: 0,
+      createdAt: null,
+      isBusinessPost: isBusinessPost,
+      searchKeywords: keywords,
+    );
+
+    await _db.collection('videos').doc(postId).set(post.toFirestore());
+    onProgress?.call(const PublishProgress(PublishStage.savingPost, 1));
+    return postId;
+  }
+
+  /// Publie un post texte pur (pas de fichier), immédiat — pas d'upload
+  /// Storage nécessaire, donc pas bloqué par le blocage Firebase Storage.
+  Future<String> publishText({
+    required String caption,
+    required List<String> hashtags,
+    required String category,
+    required ContentScope scope,
+    required String language,
+    bool isBusinessPost = false,
+    void Function(PublishProgress progress)? onProgress,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw StateError('Tu dois être connecté pour publier.');
+    }
+
+    onProgress?.call(const PublishProgress(PublishStage.savingPost, 0));
+    final postId = _db.collection('videos').doc().id;
+    final uid = user.uid;
+
+    final userDoc = await _db.collection('users').doc(uid).get();
+    final userData = userDoc.data() ?? <String, dynamic>{};
+
+    final normalizedHashtags = hashtags.map((tag) => tag.toLowerCase()).toList();
+    final trimmedCaption = caption.trim();
+    final keywords = buildSearchKeywords(trimmedCaption, extra: normalizedHashtags);
+
+    final post = VideoModel(
+      id: postId,
+      userId: uid,
+      username: userData['username'] as String? ?? user.displayName ?? 'Utilisateur',
+      userAvatarUrl: userData['avatarUrl'] as String? ?? '',
+      isVerified: userData['isVerified'] as bool? ?? false,
+      postType: PostType.text,
+      caption: trimmedCaption,
+      hashtags: normalizedHashtags,
+      musicName: '',
+      category: category,
+      scope: scope,
+      language: language,
+      likesCount: 0,
+      commentsCount: 0,
+      sharesCount: 0,
+      viewsCount: 0,
+      createdAt: null,
+      isBusinessPost: isBusinessPost,
+      searchKeywords: keywords,
+    );
+
+    await _db.collection('videos').doc(postId).set(post.toFirestore());
+    onProgress?.call(const PublishProgress(PublishStage.savingPost, 1));
+    return postId;
   }
 
   Future<Uint8List?> _generateThumbnail(String videoPath) {

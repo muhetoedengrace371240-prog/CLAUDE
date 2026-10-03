@@ -8,7 +8,7 @@
 > Après chaque session qui ajoute un champ, une fonction ou une collection,
 > **mettre à jour ce fichier** avant de fermer la conversation.
 
-Dernière mise à jour : 11/09/2026
+Dernière mise à jour : 18/09/2026
 
 > **Statut de complétude** : modèles Dart (User, Business, Chat, Message, Video, Comment) ET
 > tous les services (`auth`, `business`, `chat`, `feed`, `gold`, `notification`, `profile`, `search`)
@@ -497,3 +497,58 @@ En changeant la signature de `friendlyErrorMessage()` (ajout du paramètre `t`),
 **Leçon pour la suite** : quand on change la signature d'une fonction partagée (service appelé depuis plusieurs écrans), toujours faire une recherche globale (`Ctrl+Shift+F`) du nom de la fonction dans **tout le projet** avant d'envoyer sur GitHub — pas seulement relire les fichiers qu'on pense avoir modifiés. Ça aurait évité ce build cassé.
 
 **État du chantier traductions au 11/09/2026** : considéré **complet** pour tous les écrans et messages identifiés à ce jour (Bienvenue, Connexion, Inscription, Splash, Découvrir, Boîte de réception, Profil, Feed, Créer, messages d'erreur Firebase). Reste non traduit, mineur : le titre "Modération" dans `settings_screen.dart` (visible seulement par les comptes admin).
+## 14. Catégories de commerces traduites (ajouté le 14/09/2026)
+
+**Piège évité** : les 10 valeurs de `kBusinessCategories` (`business_model.dart`) sont stockées telles quelles dans Firestore (champ `category` de chaque commerce) — donc il était hors de question de les traduire directement dans la liste, sous peine de "casser" la catégorie de tous les commerces déjà créés. **`kBusinessCategories` reste inchangé, en français, pour toujours** — c'est la donnée de référence stockée en base.
+
+**Solution appliquée** : nouvelle fonction `businessCategoryKey(String storedCategory)` dans `business_model.dart`, qui fait correspondre chaque valeur stockée (ex. `'Restaurant'`) à une clé de traduction (`'businessCategory.restaurant'`). Utilisée uniquement pour l'affichage, jamais pour ce qui est écrit en base.
+
+**Fichiers corrigés** :
+- `chip_filter_row.dart` (widget générique de filtre par chips) : nouveau paramètre optionnel `labelBuilder` pour transformer la valeur affichée sans toucher à la valeur de filtrage. L'option "Tous" utilise maintenant `common.all` au lieu du texte en dur.
+- `business_category_picker.dart` (sélecteur dans le formulaire de création) : chaque chip affiche `loc.t(businessCategoryKey(category))`.
+- `business_screen.dart` : `ChipFilterRow` reçoit `labelBuilder: (category) => loc.t(businessCategoryKey(category))`. Au passage, traduits aussi : titre, message de connexion requise, bouton "Ma page", et les 2 messages d'état vide (aucun commerce dans cette catégorie).
+
+**11 nouvelles clés ajoutées aux 4 fichiers JSON** : `common.all` + 10 `businessCategory.*` (une par catégorie), plus 3 `business.*` (message de connexion, 2 messages d'état vide) = 14 au total.
+
+**Vérification de sécurité avant envoi** : recherche globale (`Ctrl+Shift+F`) sur `ChipFilterRow(` dans tout le projet, pour confirmer qu'aucun autre écran n'utilise ce widget et n'aurait donc pu casser en changeant sa signature — un seul usage trouvé (`business_screen.dart`), donc rien d'autre à corriger. Bon réflexe à garder systématiquement après avoir modifié un widget/service partagé (voir aussi la leçon de la section 13).
+
+**À reproduire pour toute future liste de valeurs stockées en base** (business, catégories vidéo si ça évolue, etc.) : toujours distinguer clairement "la valeur stockée" (jamais traduite, sert de clé technique stable) de "la valeur affichée" (traduite via une fonction de correspondance dédiée). Ne jamais afficher directement une valeur venant de Firestore sans passer par cette étape de traduction.
+
+**Reste à faire, identifié pendant cette session mais pas traité** : `business_form_screen.dart` contient de nombreux autres textes en dur non audités (labels de champs, indices, messages de validation, bouton "Publier ma page", messages de succès/échec) — plus gros chantier que prévu initialement, à traiter dans une prochaine session dédiée.
+
+**Prochaine session prévue** : sécurisation de MUHETO Gold (empêcher l'auto-attribution du statut payant sans vraie vérification de paiement — voir la faille documentée section 4.5).
+## 15. Chantier "Photo + Documents" — démarré (ajouté le 18/09/2026)
+
+**Contexte** : nouvelle direction produit discutée avec Eden — élargir MUHETO au-delà de la vidéo (Photo, Document, Texte), dans une optique d'app légère pour connexions limitées / téléphones anciens. Document de vision reçu (`Claude_s_Plan.docx`), synthétisé en plan à 4 blocs : (1) fondations techniques Photo/Doc/Texte, (2) build de production Play Store, (3) allègement/offline, (4) conformité Play Console. Le Bloc 1 est en cours.
+
+**Décisions de conception validées avec Eden** :
+- Documents = PDF/fichiers ET posts texte long (les deux)
+- Photo = même fil que les vidéos, mélangées, likes/commentaires partagés
+- La collection Firestore reste nommée `videos` (renommer casserait tout l'existant) — un champ `postType` distingue maintenant `video | photo | document | text`
+
+**Fait aujourd'hui** :
+1. **`video_model.dart`** : ajout de `PostType` (enum) + `postTypeFromString()` (absence de champ = ancien document = considéré comme vidéo, aucune donnée existante affectée) + 6 nouveaux champs optionnels (`postType`, `photoUrls`, `documentUrl`, `documentName`, `documentType`) avec valeurs par défaut sûres. `videoUrl`/`thumbnailUrl` ne sont plus `required`.
+2. **`upload_service.dart`** : 3 nouvelles méthodes ajoutées à côté de `publishVideo` (inchangée) : `publishPhoto()` (upload multi-images vers `photos/{uid}/{postId}_{index}.jpg`), `publishDocument()` (upload vers `documents/{uid}/{postId}.{extension}`), `publishText()` (aucun upload Storage — fonctionne dès maintenant, pas bloqué par l'absence de Blaze).
+3. **`lib/features/create/publish_text_screen.dart`** (nouveau fichier) : écran de publication de post texte pur, sur le modèle de `PublishScreen` (vidéo) mais sans aperçu média. Complet et vérifié, pas encore branché à un point d'entrée dans l'UI.
+
+**⚠️ Piège rencontré aujourd'hui, déjà documenté mais reconfirmé** : lors du collage des 3 nouvelles méthodes dans `upload_service.dart`, le bloc s'est inséré au milieu de `publishVideo()` au lieu d'après. Corrigé en renvoyant le fichier complet à recoller intégralement plutôt que de patcher — plus fiable pour les gros blocs de code que d'insérer au milieu d'un fichier existant.
+
+**Pas encore fait / prochaine session** :
+- `PublishPhotoScreen` et `PublishDocumentScreen` (mêmes principes que `PublishTextScreen`)
+- Modifier `create_screen.dart` pour proposer 4 choix (Vidéo/Photo/Document/Texte) au lieu de Caméra/Galerie
+- Adapter l'affichage du Feed pour rendre chaque `postType` différemment (lecteur vidéo / image / icône PDF / texte seul)
+- Rien de tout ça n'a encore été testé de bout en bout — bloqué par Firebase Storage pour Photo/Document (comme la vidéo), mais Texte est testable dès que branché à un écran d'entrée.
+
+**Nouvelle idée reçue, pas commencée : fil "offres d'emploi" filtré par diplôme**
+Proposition d'Eden (via un plan externe) : ajouter un système de profils avec diplôme/domaine d'études (`DiplomaLevel`, `FieldOfStudy` enums), un fil de posts type réseau social, et des offres d'emploi filtrées par correspondance diplôme/domaine, avec rôle "employeur" distinct et règles Firestore dédiées, notifications FCM à la publication d'une offre correspondante.
+⚠️ **C'est un pivot de produit, pas juste une fonctionnalité** — MUHETO était pensé vidéo-first ; ce fil ajoute une dimension emploi/éducation. Pas de contradiction avec la vision actuelle, mais élargit significativement le périmètre.
+
+**Ordre de priorité convenu pour les prochaines sessions** :
+1. Finir Photo + Documents (chantier ouvert, à terminer avant d'en commencer un autre)
+2. Sécuriser MUHETO Gold (faille de sécurité déjà connue, section 4.5)
+3. Fil "offres d'emploi" (ne dépend pas de Firebase Storage, donc testable immédiatement, contrairement à Photo/Vidéo)
+4. Préparation technique Play Store (build release, allègement, conformité) — en dernier, une fois le périmètre de l'app stabilisé
+Le recrutement de testeurs pour le test fermé Play Console (14 jours) peut démarrer en parallèle, dès maintenant, sans dépendre du code.
+git add MEMO.md lib/models/video_model.dart lib/services/upload_service.dart lib/features/create/publish_photo_screen.dart lib/features/create/publish_text_screen.dart
+git commit -m "Fondations Photo/Document/Texte : modele, service upload, ecran photo et texte"
+git push

@@ -17,14 +17,45 @@ ContentScope contentScopeFromString(String? value) {
 
 String contentScopeToString(ContentScope scope) => scope.name;
 
+/// Type de publication. `video` reste le type par défaut pour toute
+/// publication existante en base sans ce champ (compatibilité ascendante —
+/// voir `postTypeFromString`).
+enum PostType { video, photo, document, text }
+
+PostType postTypeFromString(String? value) {
+  switch (value) {
+    case 'photo':
+      return PostType.photo;
+    case 'document':
+      return PostType.document;
+    case 'text':
+      return PostType.text;
+    case 'video':
+    default:
+      // Absent ou inconnu = ancien document sans ce champ = c'est une vidéo.
+      return PostType.video;
+  }
+}
+
+String postTypeToString(PostType type) => type.name;
+
 /// Représente un document de la collection Firestore `videos`.
+///
+/// ⚠️ Le nom de la collection ("videos") reste inchangé pour des raisons
+/// historiques, même si elle contient désormais aussi des photos, documents
+/// et posts texte — voir MEMO.md section 15. Le champ `postType` indique
+/// le vrai type de chaque publication.
 ///
 /// Structure Firestore recommandée :
 /// videos/{videoId}
+///   - postType: string ("video" | "photo" | "document" | "text")
 ///   - userId: string (référence vers users/{uid})
-///   - videoUrl: string (Firebase Storage / CDN)
-///   - thumbnailUrl: string
-///   - caption: string
+///   - videoUrl: string (si postType == video)
+///   - thumbnailUrl: string (si postType == video ou photo)
+///   - photoUrls: array<string> (si postType == photo, 1 ou plusieurs photos)
+///   - documentUrl, documentName, documentType: string (si postType == document)
+///   - caption: string (texte de la publication, utilisé par tous les types,
+///     et SEUL contenu pour postType == text)
 ///   - hashtags: array<string>
 ///   - musicName: string
 ///   - category: string (ex: "humour", "musique", "business"...)
@@ -40,8 +71,20 @@ class VideoModel {
   final String userAvatarUrl;
   final bool isVerified;
 
+  final PostType postType;
+
+  // Champs vidéo (postType == video)
   final String videoUrl;
   final String thumbnailUrl;
+
+  // Champs photo (postType == photo)
+  final List<String> photoUrls;
+
+  // Champs document (postType == document)
+  final String documentUrl;
+  final String documentName;
+  final String documentType;
+
   final String caption;
   final List<String> hashtags;
   final String musicName;
@@ -68,8 +111,13 @@ class VideoModel {
     required this.username,
     required this.userAvatarUrl,
     required this.isVerified,
-    required this.videoUrl,
-    required this.thumbnailUrl,
+    this.postType = PostType.video,
+    this.videoUrl = '',
+    this.thumbnailUrl = '',
+    this.photoUrls = const [],
+    this.documentUrl = '',
+    this.documentName = '',
+    this.documentType = '',
     required this.caption,
     required this.hashtags,
     required this.musicName,
@@ -93,8 +141,13 @@ class VideoModel {
       username: data['username'] as String? ?? 'Utilisateur MUHETO',
       userAvatarUrl: data['userAvatarUrl'] as String? ?? '',
       isVerified: data['isVerified'] as bool? ?? false,
+      postType: postTypeFromString(data['postType'] as String?),
       videoUrl: data['videoUrl'] as String? ?? '',
       thumbnailUrl: data['thumbnailUrl'] as String? ?? '',
+      photoUrls: List<String>.from(data['photoUrls'] as List? ?? const []),
+      documentUrl: data['documentUrl'] as String? ?? '',
+      documentName: data['documentName'] as String? ?? '',
+      documentType: data['documentType'] as String? ?? '',
       caption: data['caption'] as String? ?? '',
       hashtags: List<String>.from(data['hashtags'] as List? ?? const []),
       musicName: data['musicName'] as String? ?? 'Son original - Muheto',
@@ -117,8 +170,13 @@ class VideoModel {
       'username': username,
       'userAvatarUrl': userAvatarUrl,
       'isVerified': isVerified,
+      'postType': postTypeToString(postType),
       'videoUrl': videoUrl,
       'thumbnailUrl': thumbnailUrl,
+      'photoUrls': photoUrls,
+      'documentUrl': documentUrl,
+      'documentName': documentName,
+      'documentType': documentType,
       'caption': caption,
       'hashtags': hashtags,
       'musicName': musicName,
@@ -142,8 +200,13 @@ class VideoModel {
       username: username,
       userAvatarUrl: userAvatarUrl,
       isVerified: isVerified,
+      postType: postType,
       videoUrl: videoUrl,
       thumbnailUrl: thumbnailUrl,
+      photoUrls: photoUrls,
+      documentUrl: documentUrl,
+      documentName: documentName,
+      documentType: documentType,
       caption: caption,
       hashtags: hashtags,
       musicName: musicName,
