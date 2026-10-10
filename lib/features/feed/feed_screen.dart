@@ -1,5 +1,7 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
@@ -15,8 +17,9 @@ import 'widgets/video_player_item.dart';
 
 enum FeedTab { pourToi, abonnements, tendances }
 
-/// Écran cœur de l'app : flux de vidéos courtes verticales en plein écran,
-/// défilement vertical type TikTok/Reels, alimenté par Firestore.
+/// Écran cœur de l'app : flux de publications verticales en plein écran
+/// (vidéo, photo, document, texte), défilement vertical type TikTok/Reels,
+/// alimenté par Firestore.
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key, this.scope});
 
@@ -183,7 +186,8 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 }
 
-/// Une page complète du feed : vidéo plein écran + actions + légende.
+/// Une page complète du feed : contenu (selon le type de publication) +
+/// actions + légende.
 class _FeedPage extends StatelessWidget {
   const _FeedPage({
     required this.video,
@@ -199,6 +203,55 @@ class _FeedPage extends StatelessWidget {
   final VoidCallback onComment;
   final VoidCallback onShare;
 
+  /// Photos à afficher : `photoUrls`, ou à défaut la miniature seule.
+  List<String> get _photoUrls {
+    if (video.photoUrls.isNotEmpty) return video.photoUrls;
+    if (video.thumbnailUrl.isNotEmpty) return [video.thumbnailUrl];
+    return const [];
+  }
+
+  Future<void> _openDocument(BuildContext context) async {
+    final loc = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    var opened = false;
+    try {
+      if (video.documentUrl.isNotEmpty) {
+        opened = await launchUrl(
+          Uri.parse(video.documentUrl),
+          mode: LaunchMode.externalApplication,
+        );
+      }
+    } catch (_) {
+      opened = false;
+    }
+    if (!opened) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(loc.t('feed.openDocumentFailed'))),
+      );
+    }
+  }
+
+  Widget _buildContent(BuildContext context) {
+    switch (video.postType) {
+      case PostType.video:
+        return VideoPlayerItem(
+          videoUrl: video.videoUrl,
+          thumbnailUrl: video.thumbnailUrl,
+          itemKey: video.id,
+          onBecameVisible: () => feedService.registerView(video.id),
+        );
+      case PostType.photo:
+        return _PhotoCarousel(urls: _photoUrls);
+      case PostType.document:
+        return _DocumentCard(
+          video: video,
+          onOpen: () => _openDocument(context),
+        );
+      case PostType.text:
+        return _TextPost(text: video.caption);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -206,12 +259,7 @@ class _FeedPage extends StatelessWidget {
       children: [
         GestureDetector(
           onDoubleTap: onLike,
-          child: VideoPlayerItem(
-            videoUrl: video.videoUrl,
-            thumbnailUrl: video.thumbnailUrl,
-            itemKey: video.id,
-            onBecameVisible: () => feedService.registerView(video.id),
-          ),
+          child: _buildContent(context),
         ),
 
         // Voile dégradé bas pour garder la légende lisible.
@@ -255,7 +303,8 @@ class _FeedPage extends StatelessWidget {
           ),
         ),
 
-        // Légende en bas à gauche.
+        // Légende en bas à gauche. Pour un post texte, le texte est déjà
+        // affiché au centre : on ne le répète pas ici.
         Positioned(
           left: 16,
           right: 90,
@@ -263,13 +312,174 @@ class _FeedPage extends StatelessWidget {
           child: VideoCaption(
             username: video.username,
             isVerified: video.isVerified,
-            caption: video.caption,
+            caption: video.postType == PostType.text ? '' : video.caption,
             hashtags: video.hashtags,
             musicName: video.musicName,
             isBusinessPost: video.isBusinessPost,
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Photos d'un post : défilement horizontal, avec compteur "1/3" s'il y en
+/// a plusieurs.
+class _PhotoCarousel extends StatefulWidget {
+  const _PhotoCarousel({required this.urls});
+
+  final List<String> urls;
+
+  @override
+  State<_PhotoCarousel> createState() => _PhotoCarouselState();
+}
+
+class _PhotoCarouselState extends State<_PhotoCarousel> {
+  int _index = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.urls.isEmpty) {
+      return const ColoredBox(
+        color: AppColors.surface,
+        child: Center(
+          child: Icon(Icons.image_not_supported_outlined, color: AppColors.textMuted, size: 48),
+        ),
+      );
+    }
+
+    return ColoredBox(
+      color: AppColors.black,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          PageView.builder(
+            itemCount: widget.urls.length,
+            onPageChanged: (i) => setState(() => _index = i),
+            itemBuilder: (context, i) => CachedNetworkImage(
+              imageUrl: widget.urls[i],
+              fit: BoxFit.contain,
+              placeholder: (_, __) => const Center(
+                child: CircularProgressIndicator(color: AppColors.gold),
+              ),
+              errorWidget: (_, __, ___) => const Center(
+                child: Icon(Icons.broken_image_outlined, color: AppColors.textMuted, size: 48),
+              ),
+            ),
+          ),
+          if (widget.urls.length > 1)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 48,
+              right: 16,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${_index + 1}/${widget.urls.length}',
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Carte d'un post document : icône, nom du fichier, bouton "Ouvrir".
+class _DocumentCard extends StatelessWidget {
+  const _DocumentCard({required this.video, required this.onOpen});
+
+  final VideoModel video;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+    final isPdf = video.documentType == 'pdf';
+    final name = video.documentName.isNotEmpty ? video.documentName : loc.t('create.document');
+
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.surfaceElevated, AppColors.black],
+        ),
+      ),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(28, 80, 90, 220),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isPdf ? Icons.picture_as_pdf_rounded : Icons.insert_drive_file_rounded,
+                color: AppColors.gold,
+                size: 72,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                name,
+                textAlign: TextAlign.center,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: onOpen,
+                icon: const Icon(Icons.open_in_new_rounded),
+                label: Text(loc.t('feed.openDocument')),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Post texte : le texte en grand, centré, sur fond sombre.
+class _TextPost extends StatelessWidget {
+  const _TextPost({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.surfaceElevated, AppColors.black],
+        ),
+      ),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(28, 80, 90, 220),
+          child: Text(
+            text,
+            textAlign: TextAlign.center,
+            maxLines: 12,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.w600,
+              height: 1.35,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
