@@ -29,7 +29,11 @@ class _CreateScreenState extends State<CreateScreen> {
   bool _isPicking = false;
   bool _isCheckingGoldStatus = false;
 
-  Future<void> _openVideoOptions() async {
+  /// Feuille de choix "Caméra / Galerie", partagée par Vidéo et Photo.
+  Future<void> _showSourceSheet({
+    required VoidCallback onCamera,
+    required VoidCallback onGallery,
+  }) async {
     final loc = AppLocalizations.of(context);
     await showModalBottomSheet<void>(
       context: context,
@@ -45,7 +49,7 @@ class _CreateScreenState extends State<CreateScreen> {
               title: Text(loc.t('create.camera'), style: const TextStyle(color: Colors.white)),
               onTap: () {
                 Navigator.of(sheetContext).pop();
-                _openCamera();
+                onCamera();
               },
             ),
             ListTile(
@@ -53,7 +57,7 @@ class _CreateScreenState extends State<CreateScreen> {
               title: Text(loc.t('create.gallery'), style: const TextStyle(color: Colors.white)),
               onTap: () {
                 Navigator.of(sheetContext).pop();
-                _openGallery();
+                onGallery();
               },
             ),
           ],
@@ -99,11 +103,32 @@ class _CreateScreenState extends State<CreateScreen> {
     }
   }
 
+  /// Prend UNE photo avec l'appareil photo. Qualité et largeur limitées
+  /// pour garder des envois légers (connexions lentes).
+  Future<void> _takePhoto() async {
+    if (_isPicking) return;
+    setState(() => _isPicking = true);
+    try {
+      final XFile? shot = await _picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1600,
+        imageQuality: 85,
+      );
+      if (shot != null) _goToPublishPhoto([File(shot.path)]);
+    } finally {
+      if (mounted) setState(() => _isPicking = false);
+    }
+  }
+
+  /// Choisit une ou plusieurs photos dans la galerie.
   Future<void> _pickPhotos() async {
     if (_isPicking) return;
     setState(() => _isPicking = true);
     try {
-      final List<XFile> picked = await _picker.pickMultiImage();
+      final List<XFile> picked = await _picker.pickMultiImage(
+        maxWidth: 1600,
+        imageQuality: 85,
+      );
       if (picked.isNotEmpty) {
         _goToPublishPhoto(picked.map((x) => File(x.path)).toList());
       }
@@ -208,13 +233,23 @@ class _CreateScreenState extends State<CreateScreen> {
                     icon: Icons.videocam_rounded,
                     label: loc.t('create.video'),
                     isLoading: _isCheckingGoldStatus,
-                    onTap: isBusy ? null : _openVideoOptions,
+                    onTap: isBusy
+                        ? null
+                        : () => _showSourceSheet(
+                              onCamera: _openCamera,
+                              onGallery: _openGallery,
+                            ),
                   ),
                   _CreateOptionTile(
                     icon: Icons.photo_library_rounded,
                     label: loc.t('create.photo'),
                     isLoading: _isPicking,
-                    onTap: isBusy ? null : _pickPhotos,
+                    onTap: isBusy
+                        ? null
+                        : () => _showSourceSheet(
+                              onCamera: _takePhoto,
+                              onGallery: _pickPhotos,
+                            ),
                   ),
                   _CreateOptionTile(
                     icon: Icons.insert_drive_file_rounded,
