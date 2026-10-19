@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../models/video_model.dart';
+import '../feed/widgets/post_content.dart';
 import '../feed/widgets/video_caption.dart';
-import '../feed/widgets/video_player_item.dart';
 
-/// Lecture plein écran d'une seule vidéo, ouverte depuis la grille du
-/// profil. Réutilise le même lecteur que le Feed principal pour une
-/// expérience cohérente, sans le système de swipe vertical multi-vidéos.
+/// Lecture plein écran d'une seule publication (vidéo, photo, document ou
+/// texte), ouverte depuis la grille du profil. Réutilise le même affichage
+/// que le Feed, sans le défilement vertical entre publications.
 class SingleVideoScreen extends StatelessWidget {
   const SingleVideoScreen({super.key, required this.video});
 
@@ -20,11 +20,7 @@ class SingleVideoScreen extends StatelessWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          VideoPlayerItem(
-            videoUrl: video.videoUrl,
-            thumbnailUrl: video.thumbnailUrl,
-            itemKey: 'single_${video.id}',
-          ),
+          PostContent(video: video, itemKey: 'single_${video.id}'),
           Positioned(
             left: 0,
             right: 0,
@@ -52,7 +48,8 @@ class SingleVideoScreen extends StatelessWidget {
             child: VideoCaption(
               username: video.username,
               isVerified: video.isVerified,
-              caption: video.caption,
+              // Pour un post texte, le texte est déjà affiché au centre.
+              caption: video.postType == PostType.text ? '' : video.caption,
               hashtags: video.hashtags,
               musicName: video.musicName,
               isBusinessPost: video.isBusinessPost,

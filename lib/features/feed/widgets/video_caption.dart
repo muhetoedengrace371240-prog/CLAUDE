@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
 
-/// Bloc d'informations affiché en bas à gauche de chaque vidéo :
+/// Bloc d'informations affiché en bas à gauche de chaque publication :
 /// @pseudo (+ badge vérifié doré), légende, hashtags, nom du son.
+/// La légende, les hashtags et le son ne sont affichés que s'ils ne sont
+/// pas vides (les photos, documents et textes n'ont pas de son).
 class VideoCaption extends StatelessWidget {
   const VideoCaption({
     super.key,
@@ -65,17 +67,19 @@ class VideoCaption extends StatelessWidget {
             ],
           ],
         ),
-        const SizedBox(height: 6),
-        Text(
-          caption,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            shadows: [Shadow(color: Colors.black87, blurRadius: 4)],
+        if (caption.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Text(
+            caption,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              shadows: [Shadow(color: Colors.black87, blurRadius: 4)],
+            ),
           ),
-        ),
+        ],
         if (hashtagText.isNotEmpty) ...[
           const SizedBox(height: 4),
           Text(
@@ -89,21 +93,23 @@ class VideoCaption extends StatelessWidget {
             ),
           ),
         ],
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            const Icon(Icons.music_note, color: Colors.white, size: 14),
-            const SizedBox(width: 4),
-            Flexible(
-              child: Text(
-                musicName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.white, fontSize: 12.5),
+        if (musicName.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(Icons.music_note, color: Colors.white, size: 14),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  musicName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white, fontSize: 12.5),
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ],
     );
   }
