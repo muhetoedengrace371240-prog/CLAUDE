@@ -42,14 +42,30 @@ class ProfileService {
     return doc.exists ? UserModel.fromFirestore(doc) : null;
   }
 
-  /// Flux temps réel des vidéos publiées par un utilisateur, les plus
-  /// récentes en premier — alimente la grille 3 colonnes du profil.
+  /// Flux temps réel des publications d'un utilisateur, les plus récentes
+  /// en premier — alimente la grille 3 colonnes du profil.
+  ///
+  /// Le tri par date se fait ici, côté application, et non dans la requête
+  /// Firestore : combiner `where('userId')` et `orderBy('createdAt')`
+  /// exigerait un index composite à créer dans la console Firebase.
   Stream<List<VideoModel>> watchUserVideos(String uid) {
     return _videos
         .where('userId', isEqualTo: uid)
-        .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snap) => snap.docs.map(VideoModel.fromFirestore).toList());
+        .map((snap) {
+      final posts = snap.docs.map(VideoModel.fromFirestore).toList();
+      // Une publication tout juste envoyée peut ne pas avoir encore sa date
+      // (horodatage serveur en attente) : on la place en premier.
+      posts.sort((a, b) {
+        final aDate = a.createdAt;
+        final bDate = b.createdAt;
+        if (aDate == null && bDate == null) return 0;
+        if (aDate == null) return -1;
+        if (bDate == null) return 1;
+        return bDate.compareTo(aDate);
+      });
+      return posts;
+    });
   }
 
   /// Vérifie si l'utilisateur connecté suit déjà [targetUid].
