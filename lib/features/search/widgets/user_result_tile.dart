@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/user_model.dart';
 import '../../gold/widgets/gold_badge.dart';
@@ -14,6 +15,8 @@ class UserResultTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+
     return ListTile(
       onTap: onTap,
       leading: Container(
@@ -39,7 +42,10 @@ class UserResultTile extends StatelessWidget {
             child: Text(
               '@${user.username}',
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14.5),
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14.5),
             ),
           ),
           if (user.isVerified) ...[
@@ -60,7 +66,9 @@ class UserResultTile extends StatelessWidget {
               style: const TextStyle(color: Colors.white54, fontSize: 12.5),
             )
           : Text(
-              '${user.followersCount} abonnés',
+              loc
+                  .t('search.followersCount')
+                  .replaceFirst('{count}', '${user.followersCount}'),
               style: const TextStyle(color: Colors.white38, fontSize: 12),
             ),
     );

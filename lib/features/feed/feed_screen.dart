@@ -11,6 +11,8 @@ import '../../services/feed_service.dart';
 import '../../services/profile_service.dart';
 import '../gold/widgets/gold_badge.dart';
 import '../profile/profile_screen.dart';
+import '../search/search_screen.dart';
+import '../search/widgets/search_tab_selector.dart';
 import 'widgets/video_action_column.dart';
 import 'widgets/video_caption.dart';
 import 'widgets/video_player_item.dart';
@@ -148,7 +150,9 @@ class _FeedScreenState extends State<FeedScreen> {
                             style: TextStyle(
                               color: isSelected ? Colors.white : Colors.white60,
                               fontSize: 15,
-                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                              fontWeight: isSelected
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -166,6 +170,27 @@ class _FeedScreenState extends State<FeedScreen> {
                     ),
                   );
                 }).toList(),
+              ),
+            ),
+          ),
+
+          // Recherche : sous la barre d'onglets, à gauche. (À droite, elle
+          // chevaucherait « Tendances » et le compteur des photos.)
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 44, left: 8),
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: IconButton(
+                  icon: const Icon(Icons.search_rounded,
+                      color: Colors.white, size: 26),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const SearchScreen(
+                          initialTab: SearchResultTab.videos),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
@@ -343,7 +368,8 @@ class _PhotoCarouselState extends State<_PhotoCarousel> {
       return const ColoredBox(
         color: AppColors.surface,
         child: Center(
-          child: Icon(Icons.image_not_supported_outlined, color: AppColors.textMuted, size: 48),
+          child: Icon(Icons.image_not_supported_outlined,
+              color: AppColors.textMuted, size: 48),
         ),
       );
     }
@@ -363,7 +389,8 @@ class _PhotoCarouselState extends State<_PhotoCarousel> {
                 child: CircularProgressIndicator(color: AppColors.gold),
               ),
               errorWidget: (_, __, ___) => const Center(
-                child: Icon(Icons.broken_image_outlined, color: AppColors.textMuted, size: 48),
+                child: Icon(Icons.broken_image_outlined,
+                    color: AppColors.textMuted, size: 48),
               ),
             ),
           ),
@@ -372,7 +399,8 @@ class _PhotoCarouselState extends State<_PhotoCarousel> {
               top: MediaQuery.of(context).padding.top + 48,
               right: 16,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.black54,
                   borderRadius: BorderRadius.circular(12),
@@ -400,7 +428,9 @@ class _DocumentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
     final isPdf = video.documentType == 'pdf';
-    final name = video.documentName.isNotEmpty ? video.documentName : loc.t('create.document');
+    final name = video.documentName.isNotEmpty
+        ? video.documentName
+        : loc.t('create.document');
 
     return DecoratedBox(
       decoration: const BoxDecoration(
@@ -417,7 +447,9 @@ class _DocumentCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                isPdf ? Icons.picture_as_pdf_rounded : Icons.insert_drive_file_rounded,
+                isPdf
+                    ? Icons.picture_as_pdf_rounded
+                    : Icons.insert_drive_file_rounded,
                 color: AppColors.gold,
                 size: 72,
               ),
@@ -594,7 +626,10 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                               child: Text(
                                 c.username,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(color: AppColors.gold, fontSize: 13, fontWeight: FontWeight.w600),
+                                style: const TextStyle(
+                                    color: AppColors.gold,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600),
                               ),
                             ),
                             if (c.isGoldMember) ...[
@@ -637,11 +672,13 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                             child: SizedBox(
                               width: 20,
                               height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2.2, color: AppColors.gold),
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2.2, color: AppColors.gold),
                             ),
                           )
                         : IconButton(
-                            icon: const Icon(Icons.send_rounded, color: AppColors.gold),
+                            icon: const Icon(Icons.send_rounded,
+                                color: AppColors.gold),
                             onPressed: _send,
                           ),
                   ],

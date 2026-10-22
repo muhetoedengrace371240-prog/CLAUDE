@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/business_model.dart';
 import '../../models/user_model.dart';
@@ -16,9 +17,9 @@ import '../profile/widgets/video_grid_tile.dart';
 import 'widgets/search_tab_selector.dart';
 import 'widgets/user_result_tile.dart';
 
-/// Écran de recherche globale : utilisateurs/créateurs, vidéos, et pages
-/// Business — un seul champ de recherche, un filtre par catégorie pour
-/// choisir quelle collection interroger.
+/// Écran de recherche globale : utilisateurs/créateurs, publications, et
+/// pages Business — un seul champ de recherche, un filtre par catégorie
+/// pour choisir quelle collection interroger.
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key, this.initialTab = SearchResultTab.users});
 
@@ -72,6 +73,8 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+
     return Scaffold(
       backgroundColor: AppColors.black,
       appBar: AppBar(
@@ -82,11 +85,13 @@ class _SearchScreenState extends State<SearchScreen> {
           onChanged: _onQueryChanged,
           style: const TextStyle(color: Colors.white, fontSize: 15),
           decoration: InputDecoration(
-            hintText: 'Rechercher sur MUHETO...',
-            prefixIcon: const Icon(Icons.search_rounded, color: AppColors.gold, size: 20),
+            hintText: loc.t('search.hint'),
+            prefixIcon: const Icon(Icons.search_rounded,
+                color: AppColors.gold, size: 20),
             suffixIcon: _controller.text.isNotEmpty
                 ? IconButton(
-                    icon: const Icon(Icons.close_rounded, color: AppColors.textMuted, size: 18),
+                    icon: const Icon(Icons.close_rounded,
+                        color: AppColors.textMuted, size: 18),
                     onPressed: () {
                       _controller.clear();
                       _onQueryChanged('');
@@ -127,11 +132,14 @@ class _SearchScreenState extends State<SearchScreen> {
 
     switch (_selectedTab) {
       case SearchResultTab.users:
-        return _UserResults(query: _debouncedQuery, searchService: _searchService);
+        return _UserResults(
+            query: _debouncedQuery, searchService: _searchService);
       case SearchResultTab.videos:
-        return _VideoResults(query: _debouncedQuery, searchService: _searchService);
+        return _VideoResults(
+            query: _debouncedQuery, searchService: _searchService);
       case SearchResultTab.business:
-        return _BusinessResults(query: _debouncedQuery, businessService: _businessService);
+        return _BusinessResults(
+            query: _debouncedQuery, businessService: _businessService);
     }
   }
 }
@@ -141,18 +149,21 @@ class _SearchPrompt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    final loc = AppLocalizations.of(context);
+
+    return Center(
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 32),
+        padding: const EdgeInsets.symmetric(horizontal: 32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.travel_explore_rounded, color: AppColors.textMuted, size: 42),
-            SizedBox(height: 14),
+            const Icon(Icons.travel_explore_rounded,
+                color: AppColors.textMuted, size: 42),
+            const SizedBox(height: 14),
             Text(
-              'Recherche des créateurs, des vidéos ou des commerces locaux',
+              loc.t('search.prompt'),
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white54, fontSize: 13.5),
+              style: const TextStyle(color: Colors.white54, fontSize: 13.5),
             ),
           ],
         ),
@@ -174,7 +185,8 @@ class _EmptyResult extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.search_off_rounded, color: AppColors.textMuted, size: 38),
+            const Icon(Icons.search_off_rounded,
+                color: AppColors.textMuted, size: 38),
             const SizedBox(height: 12),
             Text(
               message,
@@ -196,15 +208,20 @@ class _UserResults extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+
     return StreamBuilder<List<UserModel>>(
       stream: searchService.searchUsers(query),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: AppColors.gold));
+          return const Center(
+              child: CircularProgressIndicator(color: AppColors.gold));
         }
         final users = snapshot.data ?? const [];
         if (users.isEmpty) {
-          return _EmptyResult(message: 'Aucun utilisateur trouvé pour "$query".');
+          return _EmptyResult(
+            message: loc.t('search.noUsers').replaceFirst('{query}', query),
+          );
         }
         return ListView.builder(
           itemCount: users.length,
@@ -231,16 +248,19 @@ class _VideoResults extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+
     return StreamBuilder<List<VideoModel>>(
       stream: searchService.searchVideos(query),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: AppColors.gold));
+          return const Center(
+              child: CircularProgressIndicator(color: AppColors.gold));
         }
         final videos = snapshot.data ?? const [];
         if (videos.isEmpty) {
           return _EmptyResult(
-            message: 'Aucune vidéo trouvée pour "$query".\nAstuce : essaie avec un #hashtag.',
+            message: loc.t('search.noPosts').replaceFirst('{query}', query),
           );
         }
         return GridView.builder(
@@ -257,7 +277,8 @@ class _VideoResults extends StatelessWidget {
             return VideoGridTile(
               video: video,
               onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => SingleVideoScreen(video: video)),
+                MaterialPageRoute(
+                    builder: (_) => SingleVideoScreen(video: video)),
               ),
             );
           },
@@ -275,15 +296,21 @@ class _BusinessResults extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+
     return StreamBuilder<List<BusinessModel>>(
       stream: businessService.searchBusinesses(query),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: AppColors.gold));
+          return const Center(
+              child: CircularProgressIndicator(color: AppColors.gold));
         }
         final businesses = snapshot.data ?? const [];
         if (businesses.isEmpty) {
-          return _EmptyResult(message: 'Aucun commerce trouvé pour "$query".');
+          return _EmptyResult(
+            message:
+                loc.t('search.noBusinesses').replaceFirst('{query}', query),
+          );
         }
         return ListView.builder(
           padding: const EdgeInsets.symmetric(vertical: 8),
@@ -293,7 +320,9 @@ class _BusinessResults extends StatelessWidget {
             return BusinessCard(
               business: business,
               onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => BusinessDetailScreen(businessId: business.id)),
+                MaterialPageRoute(
+                    builder: (_) =>
+                        BusinessDetailScreen(businessId: business.id)),
               ),
             );
           },
