@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/business_model.dart';
 import '../../services/business_service.dart';
@@ -16,22 +17,27 @@ class BusinessAnalyticsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     final businessService = BusinessService();
 
     return Scaffold(
       backgroundColor: AppColors.black,
-      appBar: AppBar(title: const Text('Statistiques de la page')),
+      appBar: AppBar(title: Text(loc.t('analytics.title'))),
       body: StreamBuilder<BusinessModel?>(
         stream: businessService.watchBusiness(businessId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.gold));
+            return const Center(
+                child: CircularProgressIndicator(color: AppColors.gold));
           }
 
           final business = snapshot.data;
           if (business == null) {
-            return const Center(
-              child: Text('Cette fiche est introuvable.', style: TextStyle(color: Colors.white70)),
+            return Center(
+              child: Text(
+                loc.t('analytics.notFound'),
+                style: const TextStyle(color: Colors.white70),
+              ),
             );
           }
 
@@ -44,67 +50,84 @@ class BusinessAnalyticsScreen extends StatelessWidget {
             children: [
               Text(
                 business.name,
-                style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 4),
-              const Text(
-                'Vue d\'ensemble de l\'engagement sur ta fiche.',
-                style: TextStyle(color: Colors.white54, fontSize: 13),
+              Text(
+                loc.t('analytics.overview'),
+                style: const TextStyle(color: Colors.white54, fontSize: 13),
               ),
               const SizedBox(height: 18),
-              GridView.count(
-                crossAxisCount: 2,
+              // Hauteur fixe (mainAxisExtent) plutôt qu'un rapport
+              // largeur/hauteur : le contenu d'une tuile a une hauteur
+              // constante, quelle que soit la largeur de l'écran.
+              GridView(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 1.5,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  mainAxisExtent: 128,
+                ),
                 children: [
                   StatCard(
                     icon: Icons.visibility_rounded,
                     value: StatCard.formatCount(business.viewsCount),
-                    label: 'Vues de la fiche',
+                    label: loc.t('analytics.views'),
                   ),
                   StatCard(
                     icon: Icons.touch_app_rounded,
                     value: StatCard.formatCount(totalClicks),
-                    label: 'Clics au total',
+                    label: loc.t('analytics.totalClicks'),
                   ),
                   StatCard(
                     icon: Icons.call_rounded,
                     value: StatCard.formatCount(business.callClicksCount),
-                    label: 'Clics "Appeler"',
+                    label: loc.t('analytics.callClicks'),
                   ),
                   StatCard(
                     icon: Icons.chat_bubble_rounded,
                     value: StatCard.formatCount(business.whatsappClicksCount),
-                    label: 'Clics WhatsApp',
+                    label: loc.t('analytics.whatsappClicks'),
                   ),
                   StatCard(
                     icon: Icons.language_rounded,
                     value: StatCard.formatCount(business.websiteClicksCount),
-                    label: 'Clics site web',
+                    label: loc.t('analytics.websiteClicks'),
                   ),
                   StatCard(
                     icon: Icons.percent_rounded,
                     value: business.viewsCount == 0
                         ? '—'
                         : '${((totalClicks / business.viewsCount) * 100).toStringAsFixed(0)}%',
-                    label: 'Taux de clic',
+                    label: loc.t('analytics.clickRate'),
                   ),
                 ],
               ),
               const SizedBox(height: 26),
-              const Text(
-                'Répartition des clics',
-                style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700),
+              Text(
+                loc.t('analytics.clickBreakdown'),
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 16),
               SimpleBarChart(
                 points: [
-                  BarChartPoint(label: 'Appel', value: business.callClicksCount),
-                  BarChartPoint(label: 'WhatsApp', value: business.whatsappClicksCount),
-                  BarChartPoint(label: 'Site web', value: business.websiteClicksCount),
+                  BarChartPoint(
+                      label: loc.t('business.call'),
+                      value: business.callClicksCount),
+                  BarChartPoint(
+                      label: loc.t('business.whatsapp'),
+                      value: business.whatsappClicksCount),
+                  BarChartPoint(
+                      label: loc.t('business.website'),
+                      value: business.websiteClicksCount),
                 ],
               ),
             ],
