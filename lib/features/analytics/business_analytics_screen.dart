@@ -71,7 +71,7 @@ class BusinessAnalyticsScreen extends StatelessWidget {
                   crossAxisCount: 2,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
-                  mainAxisExtent: 128,
+                  mainAxisExtent: 148,
                 ),
                 children: [
                   StatCard(

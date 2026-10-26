@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/business_model.dart';
 import '../../services/business_service.dart';
@@ -27,11 +28,24 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
   // quand un like ou un changement mineur déclenche un nouveau snapshot).
   bool _viewCounted = false;
 
+  /// Clés de traduction des jours. Les valeurs stockées dans Firestore
+  /// (`kWeekDaysFr`) restent en français : seule leur affichage est traduit.
+  static const _weekdayKeys = {
+    'Lundi': 'weekday.monday',
+    'Mardi': 'weekday.tuesday',
+    'Mercredi': 'weekday.wednesday',
+    'Jeudi': 'weekday.thursday',
+    'Vendredi': 'weekday.friday',
+    'Samedi': 'weekday.saturday',
+    'Dimanche': 'weekday.sunday',
+  };
+
   Future<void> _launch(BuildContext context, Uri uri) async {
+    final loc = AppLocalizations.of(context);
     final success = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!success && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Impossible d'ouvrir ce lien.")),
+        SnackBar(content: Text(loc.t('business.openFailed'))),
       );
     }
   }
@@ -44,6 +58,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     final businessId = widget.businessId;
 
     return Scaffold(
@@ -52,26 +67,34 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
         stream: _businessService.watchBusiness(businessId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.gold));
+            return const Center(
+                child: CircularProgressIndicator(color: AppColors.gold));
           }
 
           final business = snapshot.data;
           if (business == null) {
             return Scaffold(
               backgroundColor: AppColors.black,
-              appBar: AppBar(leading: BackButton(onPressed: () => Navigator.of(context).pop())),
-              body: const Center(
-                child: Text('Ce commerce est introuvable.', style: TextStyle(color: Colors.white70)),
+              appBar: AppBar(
+                  leading:
+                      BackButton(onPressed: () => Navigator.of(context).pop())),
+              body: Center(
+                child: Text(
+                  loc.t('business.notFound'),
+                  style: const TextStyle(color: Colors.white70),
+                ),
               ),
             );
           }
 
           // Vue comptée une seule fois par ouverture d'écran, dès que la
           // fiche a fini de charger — pas à chaque frame de build.
-          WidgetsBinding.instance.addPostFrameCallback((_) => _registerViewOnce());
+          WidgetsBinding.instance
+              .addPostFrameCallback((_) => _registerViewOnce());
 
           final isOpen = business.isOpenNow;
-          final isOwner = business.ownerId == FirebaseAuth.instance.currentUser?.uid;
+          final isOwner =
+              business.ownerId == FirebaseAuth.instance.currentUser?.uid;
 
           return CustomScrollView(
             slivers: [
@@ -94,7 +117,8 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                         icon: Icons.insights_rounded,
                         onTap: () => Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (_) => BusinessAnalyticsScreen(businessId: businessId),
+                            builder: (_) =>
+                                BusinessAnalyticsScreen(businessId: businessId),
                           ),
                         ),
                       ),
@@ -105,7 +129,8 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                         icon: Icons.edit_rounded,
                         onTap: () => Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (_) => BusinessFormScreen(existingBusiness: business),
+                            builder: (_) =>
+                                BusinessFormScreen(existingBusiness: business),
                           ),
                         ),
                       ),
@@ -114,7 +139,8 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                 ],
                 flexibleSpace: FlexibleSpaceBar(
                   background: business.bannerUrl.isNotEmpty
-                      ? CachedNetworkImage(imageUrl: business.bannerUrl, fit: BoxFit.cover)
+                      ? CachedNetworkImage(
+                          imageUrl: business.bannerUrl, fit: BoxFit.cover)
                       : const ColoredBox(color: AppColors.surface),
                 ),
               ),
@@ -134,16 +160,20 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                               height: 76,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                border: Border.all(color: AppColors.gold, width: 2.5),
+                                border: Border.all(
+                                    color: AppColors.gold, width: 2.5),
                                 color: AppColors.black,
                               ),
                               padding: const EdgeInsets.all(3),
                               child: ClipOval(
                                 child: business.logoUrl.isNotEmpty
-                                    ? CachedNetworkImage(imageUrl: business.logoUrl, fit: BoxFit.cover)
+                                    ? CachedNetworkImage(
+                                        imageUrl: business.logoUrl,
+                                        fit: BoxFit.cover)
                                     : const ColoredBox(
                                         color: AppColors.surfaceElevated,
-                                        child: Icon(Icons.storefront_rounded, color: AppColors.gold, size: 30),
+                                        child: Icon(Icons.storefront_rounded,
+                                            color: AppColors.gold, size: 30),
                                       ),
                               ),
                             ),
@@ -169,13 +199,15 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                                       ),
                                       if (business.isVerified) ...[
                                         const SizedBox(width: 5),
-                                        const Icon(Icons.verified, color: AppColors.gold, size: 18),
+                                        const Icon(Icons.verified,
+                                            color: AppColors.gold, size: 18),
                                       ],
                                     ],
                                   ),
                                   const SizedBox(height: 3),
                                   Text(
-                                    business.category,
+                                    loc.t(
+                                        businessCategoryKey(business.category)),
                                     style: const TextStyle(
                                       color: AppColors.goldLight,
                                       fontSize: 13,
@@ -191,14 +223,20 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                                           height: 7,
                                           decoration: BoxDecoration(
                                             shape: BoxShape.circle,
-                                            color: isOpen ? AppColors.success : AppColors.error,
+                                            color: isOpen
+                                                ? AppColors.success
+                                                : AppColors.error,
                                           ),
                                         ),
                                         const SizedBox(width: 5),
                                         Text(
-                                          isOpen ? 'Ouvert maintenant' : 'Fermé actuellement',
+                                          isOpen
+                                              ? loc.t('business.openNow')
+                                              : loc.t('business.closedNow'),
                                           style: TextStyle(
-                                            color: isOpen ? AppColors.success : AppColors.error,
+                                            color: isOpen
+                                                ? AppColors.success
+                                                : AppColors.error,
                                             fontSize: 12,
                                             fontWeight: FontWeight.w600,
                                           ),
@@ -216,7 +254,8 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                         const SizedBox(height: 4),
                         Text(
                           business.description,
-                          style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.4),
+                          style: const TextStyle(
+                              color: Colors.white70, fontSize: 14, height: 1.4),
                         ),
                         const SizedBox(height: 22),
                       ],
@@ -228,10 +267,15 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                             Expanded(
                               child: _ActionButton(
                                 icon: Icons.call_rounded,
-                                label: 'Appeler',
+                                label: loc.t('business.call'),
                                 onTap: () {
-                                  _businessService.registerCallClick(businessId);
-                                  _launch(context, Uri(scheme: 'tel', path: business.phoneNumber));
+                                  _businessService
+                                      .registerCallClick(businessId);
+                                  _launch(
+                                      context,
+                                      Uri(
+                                          scheme: 'tel',
+                                          path: business.phoneNumber));
                                 },
                               ),
                             ),
@@ -240,12 +284,14 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                             Expanded(
                               child: _ActionButton(
                                 icon: Icons.chat_bubble_rounded,
-                                label: 'WhatsApp',
+                                label: loc.t('business.whatsapp'),
                                 onTap: () {
-                                  _businessService.registerWhatsappClick(businessId);
+                                  _businessService
+                                      .registerWhatsappClick(businessId);
                                   _launch(
                                     context,
-                                    Uri.parse('https://wa.me/${business.whatsappNumber.replaceAll('+', '')}'),
+                                    Uri.parse(
+                                        'https://wa.me/${business.whatsappNumber.replaceAll('+', '')}'),
                                   );
                                 },
                               ),
@@ -256,10 +302,12 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                             Expanded(
                               child: _ActionButton(
                                 icon: Icons.language_rounded,
-                                label: 'Site web',
+                                label: loc.t('business.website'),
                                 onTap: () {
-                                  _businessService.registerWebsiteClick(businessId);
-                                  _launch(context, Uri.parse(business.websiteUrl));
+                                  _businessService
+                                      .registerWebsiteClick(businessId);
+                                  _launch(
+                                      context, Uri.parse(business.websiteUrl));
                                 },
                               ),
                             ),
@@ -270,17 +318,21 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
 
                       // --- Adresse ---
                       if (business.address.isNotEmpty) ...[
-                        const _SectionTitle('Adresse'),
+                        _SectionTitle(loc.t('business.address')),
                         const SizedBox(height: 8),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(Icons.location_on_rounded, color: AppColors.gold, size: 20),
+                            const Icon(Icons.location_on_rounded,
+                                color: AppColors.gold, size: 20),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
                                 '${business.address}\n${business.city}',
-                                style: const TextStyle(color: Colors.white70, fontSize: 13.5, height: 1.4),
+                                style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 13.5,
+                                    height: 1.4),
                               ),
                             ),
                           ],
@@ -290,11 +342,13 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
 
                       // --- Horaires d'ouverture ---
                       if (business.openingHours.isNotEmpty) ...[
-                        const _SectionTitle("Horaires d'ouverture"),
+                        _SectionTitle(loc.t('business.hours')),
                         const SizedBox(height: 10),
                         ...kWeekDaysFr.map((day) {
                           final hours = business.openingHours[day] ?? 'Fermé';
-                          final isToday = kWeekDaysFr[DateTime.now().weekday - 1] == day;
+                          final isClosed = hours.toLowerCase() == 'fermé';
+                          final isToday =
+                              kWeekDaysFr[DateTime.now().weekday - 1] == day;
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 4),
                             child: Row(
@@ -302,20 +356,31 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                                 SizedBox(
                                   width: 100,
                                   child: Text(
-                                    day,
+                                    loc.t(
+                                        _weekdayKeys[day] ?? 'weekday.monday'),
                                     style: TextStyle(
-                                      color: isToday ? AppColors.gold : Colors.white70,
+                                      color: isToday
+                                          ? AppColors.gold
+                                          : Colors.white70,
                                       fontSize: 13,
-                                      fontWeight: isToday ? FontWeight.w700 : FontWeight.w400,
+                                      fontWeight: isToday
+                                          ? FontWeight.w700
+                                          : FontWeight.w400,
                                     ),
                                   ),
                                 ),
                                 Text(
-                                  hours,
+                                  isClosed
+                                      ? loc.t('business.closedLabel')
+                                      : hours,
                                   style: TextStyle(
-                                    color: isToday ? Colors.white : AppColors.textMuted,
+                                    color: isToday
+                                        ? Colors.white
+                                        : AppColors.textMuted,
                                     fontSize: 13,
-                                    fontWeight: isToday ? FontWeight.w600 : FontWeight.w400,
+                                    fontWeight: isToday
+                                        ? FontWeight.w600
+                                        : FontWeight.w400,
                                   ),
                                 ),
                               ],
@@ -326,21 +391,24 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                       ],
 
                       // --- Réseaux sociaux ---
-                      if (business.instagramUrl.isNotEmpty || business.facebookUrl.isNotEmpty) ...[
-                        const _SectionTitle('Réseaux sociaux'),
+                      if (business.instagramUrl.isNotEmpty ||
+                          business.facebookUrl.isNotEmpty) ...[
+                        _SectionTitle(loc.t('business.social')),
                         const SizedBox(height: 10),
                         Row(
                           children: [
                             if (business.instagramUrl.isNotEmpty)
                               _RoundIconButton(
                                 icon: Icons.camera_alt_rounded,
-                                onTap: () => _launch(context, Uri.parse(business.instagramUrl)),
+                                onTap: () => _launch(
+                                    context, Uri.parse(business.instagramUrl)),
                               ),
                             if (business.facebookUrl.isNotEmpty) ...[
                               const SizedBox(width: 10),
                               _RoundIconButton(
                                 icon: Icons.facebook_rounded,
-                                onTap: () => _launch(context, Uri.parse(business.facebookUrl)),
+                                onTap: () => _launch(
+                                    context, Uri.parse(business.facebookUrl)),
                               ),
                             ],
                           ],
@@ -367,13 +435,15 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700),
+      style: const TextStyle(
+          color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700),
     );
   }
 }
 
 class _ActionButton extends StatelessWidget {
-  const _ActionButton({required this.icon, required this.label, required this.onTap});
+  const _ActionButton(
+      {required this.icon, required this.label, required this.onTap});
 
   final IconData icon;
   final String label;
@@ -394,7 +464,11 @@ class _ActionButton extends StatelessWidget {
           children: [
             Icon(icon, color: AppColors.gold, size: 20),
             const SizedBox(height: 5),
-            Text(label, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+            Text(label,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600)),
           ],
         ),
       ),
@@ -415,7 +489,8 @@ class _RoundIconButton extends StatelessWidget {
       child: Container(
         width: 40,
         height: 40,
-        decoration: const BoxDecoration(color: Colors.black45, shape: BoxShape.circle),
+        decoration:
+            const BoxDecoration(color: Colors.black45, shape: BoxShape.circle),
         child: Icon(icon, color: Colors.white, size: 20),
       ),
     );
