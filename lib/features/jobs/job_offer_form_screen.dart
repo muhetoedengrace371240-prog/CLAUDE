@@ -80,13 +80,13 @@ class _JobOfferFormScreenState extends State<JobOfferFormScreen> {
       );
       navigator.pop();
       messenger.showSnackBar(SnackBar(content: Text(loc.t('jobs.published'))));
-    } catch (_) {
+    } catch (e) {
       if (!mounted) {
         return;
       }
       setState(() {
         _isPublishing = false;
-        _errorMessage = loc.t('jobs.publishFailed');
+        _errorMessage = '${loc.t('jobs.publishFailed')} ($e)';
       });
     }
   }

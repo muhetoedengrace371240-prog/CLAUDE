@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../business/business_screen.dart';
+import '../jobs/jobs_screen.dart';
 import '../search/search_screen.dart';
 
-/// Écran "Découvrir" : recherche + catégories (Humour, Musique, Business...).
-/// Le grid de résultats vidéo sera branché sur Firestore dans une prochaine
-/// brique (recherche par hashtag / catégorie / utilisateur). La catégorie
-/// "Business" ouvre déjà la Page Business Locale (Brique 7).
+/// Écran "Découvrir" : recherche + catégories (Humour, Musique, Business...)
+/// + accès à l'espace Emplois. Le grid de résultats vidéo sera branché sur
+/// Firestore dans une prochaine brique. La catégorie "Business" ouvre la
+/// Page Business Locale ; la tuile "Emplois" ouvre le fil d'offres d'emploi.
 class DiscoverScreen extends StatefulWidget {
   const DiscoverScreen({super.key});
 
@@ -19,7 +20,7 @@ class DiscoverScreen extends StatefulWidget {
 class _DiscoverScreenState extends State<DiscoverScreen> {
   final _searchController = TextEditingController();
 
-  // La clé de traduction (2e élément) reste stable, quelle que soit la
+  // La clé de traduction (1er élément) reste stable, quelle que soit la
   // langue affichée. C'est elle qu'on utilise pour la logique (ex: savoir
   // si on a tapé sur "Business"), jamais le texte affiché.
   static const _categories = [
@@ -33,6 +34,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     ('category.sport', Icons.sports_soccer_rounded),
     ('category.culture', Icons.groups_rounded),
     ('category.lifestyle', Icons.star_rounded),
+    // Tuile spéciale : n'est pas une catégorie de vidéos, ouvre les offres.
+    ('nav.jobs', Icons.badge_rounded),
   ];
 
   @override
@@ -45,6 +48,12 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     if (categoryKey == 'category.business') {
       Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => const BusinessScreen()),
+      );
+      return;
+    }
+    if (categoryKey == 'nav.jobs') {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const JobsScreen()),
       );
       return;
     }

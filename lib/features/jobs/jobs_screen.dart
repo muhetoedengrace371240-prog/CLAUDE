@@ -44,7 +44,7 @@ class _JobsScreenState extends State<JobsScreen> {
       backgroundColor: AppColors.black,
       appBar: AppBar(
         title: Text(loc.t('nav.jobs').toUpperCase()),
-        automaticallyImplyLeading: false,
+        automaticallyImplyLeading: true,
       ),
       body: Column(
         children: [
